@@ -104,15 +104,33 @@ pip install -e .
 
 ---
 
-## 🎮 Usage
+### 🖥️ Windows Tray Application (Recommended)
 
-### 1. Run the Daemon
-Start the background daemon to begin monitoring LMU sessions:
+Run the daemon as a native Windows tray app that lives quietly in the taskbar notification area (system tray next to the Windows clock):
+
+* **Launch Silently (No Console Window)**: Double-click **`SimagicWheelDaemon.vbs`** or run:
+  ```bash
+  pythonw -m simagic_daemon.tray
+  ```
+  *(Or `simagic-tray` when installed via pip)*
+* **Launch with Console**: Double-click **`SimagicWheelDaemon.bat`**
+
+#### System Tray Controls:
+* **Hover / Status**: View current car loaded and active profile (e.g. `Simagic Daemon: [GT3 296] Ferrari 296 GT3`).
+* **🔔 Windows Toast Notifications**: Native banner notifications automatically pop up with sound whenever a car is loaded and the profile switches over CAN-FD.
+* **🚀 Launch SimPro Manager**: Quickly starts `simpro3.exe` if not running.
+* **⚙️ Revert Profile on Exit**: Toggle automatic fallback to the default profile when closing LMU.
+* **❌ Exit Daemon**: Right-click and choose **"Exit Daemon"** to cleanly shut down the service anytime.
+
+---
+
+### 💻 CLI Service Mode
+You can also run the daemon directly from your terminal:
 
 ```bash
 python -m simagic_daemon
 ```
-*Or, if installed via `pip`:*
+*Or via console script:*
 ```bash
 simagic-daemon
 ```
@@ -124,18 +142,10 @@ simagic-daemon
 | `--poll-interval`, `-i` | Polling rate in seconds | `1.0` |
 | `--dry-run` | Log profile switches without calling SimPro API | `False` |
 | `--revert-on-exit` | Revert GT NEO to default preset when LMU exits | `False` |
+| `--no-notify` | Disable Windows desktop toast notifications | `False` |
+| `--auto-launch-simpro` | Automatically start SimPro if not running | `False` |
 | `--once` | Run a single poll cycle and exit | `False` |
 | `--verbose`, `-v` | Enable verbose / debug logging | `False` |
-
-#### Dry Run Example:
-```bash
-python -m simagic_daemon --dry-run
-```
-
-#### Revert to Default Profile on Game Exit:
-```bash
-python -m simagic_daemon --revert-on-exit
-```
 
 ---
 

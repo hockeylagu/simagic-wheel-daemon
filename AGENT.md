@@ -76,13 +76,24 @@ WheelDeamon/
 │   ├── __init__.py                        # Version and package exports
 │   ├── __main__.py                        # CLI entrypoint for python -m simagic_daemon
 │   ├── daemon.py                          # SimagicWheelDaemon background service
+│   ├── tray.py                            # Windows System Tray app (pystray)
+│   ├── notifications.py                   # Non-blocking Windows Toast notifications
+│   ├── process_utils.py                   # Process monitor for SimPro & LMU
 │   ├── simagic_client.py                  # HTTP client for SimPro Manager REST API
 │   ├── vehicle_mapping.py                 # LMU vehicle resolver & GT NEO preset map
 │   └── lmu_reader.py                      # Telemetry ingestion (REST API + Shared Memory)
 │
 ├── tools/                                 # Standalone CLI diagnostic utilities
 │   ├── test_simagic_connection.py         # Hardware discovery & SimPro REST API tester
-│   └── test_lmu_connection.py             # LMU telemetry & vehicle resolver tester
+│   ├── test_lmu_connection.py             # LMU telemetry & vehicle resolver tester
+│   └── create_windows_shortcuts.py        # Desktop / Start Menu shortcut generator
+│
+├── assets/                                # Application icons
+│   ├── icon.ico                           # Multi-resolution Windows icon
+│   └── icon.png                           # 256x256 RGBA application icon
+│
+├── SimagicWheelDaemon.bat                 # Windows batch launcher (Console mode)
+├── SimagicWheelDaemon.vbs                 # Windows silent VBS launcher (System Tray mode)
 │
 ├── AGENT.md                               # Agent guidelines and architectural standards
 ├── CODE_MAP.md                            # Code map link / quick reference

@@ -34,6 +34,11 @@ classifiers = [
     "Topic :: Games/Entertainment :: Simulation",
 ]
 
+dependencies = [
+    "pillow>=10.0.0",
+    "pystray>=0.19.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/hockeylagu/simagic-wheel-daemon"
 Repository = "https://github.com/hockeylagu/simagic-wheel-daemon"
@@ -41,6 +46,7 @@ Issues = "https://github.com/hockeylagu/simagic-wheel-daemon/issues"
 
 [project.scripts]
 simagic-daemon = "simagic_daemon.daemon:main"
+simagic-tray = "simagic_daemon.tray:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
