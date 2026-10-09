@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simagic-wheel-daemon"
+version = "0.1.0"
+description = "Standalone automation daemon for Simagic hardware: automatic LMU profile switching and custom CAN-FD rev lights."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Samuel" }
+]
+keywords = [
+    "simagic",
+    "simracing",
+    "le-mans-ultimate",
+    "lmu",
+    "direct-drive",
+    "can-fd",
+    "gt-neo",
+    "alpha-evo"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Simulation",
+]
+
+[project.urls]
+Homepage = "https://github.com/Samuel/simagic-wheel-daemon"
+Repository = "https://github.com/Samuel/simagic-wheel-daemon"

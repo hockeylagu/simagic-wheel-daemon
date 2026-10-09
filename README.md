@@ -1,6 +1,7 @@
-# 🏎️ WheelDaemon
+# 🏎️ simagic-wheel-daemon
 
-**WheelDaemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems. It enables automatic, per-vehicle profile switching and accurate RPM rev light calibration in **Le Mans Ultimate (LMU)** running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable or third-party tools like SimHub.
+**simagic-wheel-daemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems. It enables automatic, per-vehicle profile switching and accurate RPM rev light calibration in **Le Mans Ultimate (LMU)** running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable or third-party tools like SimHub.
+
 
 ---
 
