@@ -194,11 +194,34 @@ Le Mans Ultimate is built on Studio 397's **rFactor 2 engine (ISIMotor)**. Simag
 
 ---
 
-## 7. Safety Guarantee: Why This Cannot Brick Your Wheel
+## 7. SimHub Over CAN-FD: Bypassing the Maglink USB Cable
 
-1. **No Firmware Flashing**: Firmware updates require entering bootloader mode via `device_fw_update`. The `preset_select_dev_config` endpoint has zero access to bootloader flash routines.
-2. **RAM Tuning Parameters**: When SimPro changes a profile, it sends HID reports that alter variables in the motor microcontroller's volatile RAM. If an invalid packet were somehow sent, the base's internal firmware rejects out-of-range values or resets to defaults upon power cycling.
-3. **SimPro Handles the Hardware**: Our automation script only speaks HTTP to SimPro. SimPro itself handles the USB protocol. From the hardware's perspective, this is completely indistinguishable from the user clicking a button in the SimPro GUI.
+### The Traditional Problem:
+Historically, SimHub users had to purchase and use the **Simagic Maglink (USB mode)** cable. 
+* When connected via USB, the GT NEO presents itself as a dedicated USB HID device (`VID_3670&PID_0805`). SimHub opens a direct Windows HID stream (`HidSharp.HidStream`) and writes raw LED bytes.
+* However, when mounted on the wheelbase via the Simagic Quick Release, **there is no USB cable**. The GT NEO communicates exclusively through the wheelbase's internal **CAN-FD** bus (via the spring-loaded gold contact pins). Windows only sees the Wheelbase (`PID_0500`), so SimHub cannot open a direct USB handle to the wheel.
+
+### The Modern Solution: SimPro v3 as the CAN-FD Proxy
+Inside `simpro3.exe` and `SimHub.Plugins.dll`, we discovered an official **SimHub-to-CAN-FD bridge**:
+
+1. **SimHub Process Detection**:
+   * SimPro continuously checks if `SimHubWPF.exe` is running.
+2. **The SimHub Delegation Switch**:
+   * SimPro exposes the `ctrl_by_simhub` toggle (API endpoint `POST /simpro/api/v3/set_device_simhub_data`):
+     ```json
+     {
+       "product_uuid": "33947648",
+       "device_uuid": "33947648",
+       "ctrl_by_simhub": true
+     }
+     ```
+   * Live inspection of your GT NEO confirmed this parameter:
+     `{"ctrl_by_simhub": false, "ctrled": false, "device_uuid": "0000000002060000"}`.
+3. **How the Bridge Works**:
+   * When `ctrl_by_simhub: true` is enabled, SimPro sets internal flag `m_bSimHubCtrled = true`.
+   * SimPro yields LED authority and acts as a **CAN-FD Gateway**: SimHub passes LED output data to SimPro, and SimPro forwards the frames through `SCommUsbHid::writeOutReportCanfdSync()` across the quick release pins to the GT NEO!
+   * **Result:** You can control GT NEO LEDs from SimHub **wirelessly / through the quick release CAN-FD pins without plugging in a Maglink USB cable!**
+
 
 ---
 
