@@ -33,8 +33,7 @@ except ImportError:
 
 from .daemon import SimagicWheelDaemon
 from .notifications import send_windows_notification
-from .process_utils import launch_simpro, is_simpro_running, is_lmu_running
-from .vehicle_mapping import resolve_vehicle_to_preset
+from .process_utils import launch_simpro, is_simpro_running, is_lmu_running, acquire_single_instance_lock
 from .logger import setup_logging, open_log_file
 
 logger = logging.getLogger("simagic_daemon.tray")
@@ -97,8 +96,7 @@ class SimagicTrayApp:
         status = self.daemon.get_status()
         veh = status.get("vehicle", "None (Idle)")
         if veh and veh != "None (Idle)":
-            model_name, _, _ = resolve_vehicle_to_preset(veh)
-            return f"🏎️ Car: {model_name}"
+            return f"🏎️ Car: {status.get('model_name') or veh}"
         return "🏎️ Car: None (Idle)"
 
     def _get_profile_status_text(self, item_instance=None) -> str:
@@ -253,7 +251,7 @@ class SimagicTrayApp:
                     status = self.daemon.get_status()
                     veh = status.get("vehicle", "None (Idle)")
                     if status.get("lmu_online") and veh and veh != "None (Idle)":
-                        model_name, _, _ = resolve_vehicle_to_preset(veh)
+                        model_name = status.get("model_name") or veh
                         title = f"Simagic: [{status['preset_name']}] {model_name}"
                     elif status.get("lmu_online"):
                         title = "Simagic: LMU Menu"
@@ -276,6 +274,17 @@ def main():
 
     # Setup rotating file debug logging (logs/daemon.log)
     setup_logging(log_level=logging.DEBUG)
+
+    if not acquire_single_instance_lock():
+        logger.error("Another Simagic Wheel Daemon (console or tray) is already running. Exiting.")
+        send_windows_notification(
+            "Simagic Wheel Daemon",
+            "Already running. Check the system tray.",
+            force=True
+        )
+        time.sleep(1.0)  # let the toast worker thread start before the process exits
+        sys.exit(1)
+
     app = SimagicTrayApp()
     app.start()
 

@@ -5,7 +5,7 @@
 [![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
 [![CAN-FD Native](https://img.shields.io/badge/CAN--FD-Quick%20Release-brightgreen.svg)]()
 
-**simagic-wheel-daemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems (Alpha EVO Sport wheelbase, GT NEO steering wheel, P700 pedals). It provides automatic, per-vehicle profile switching and accurate RPM rev light calibration in **Le Mans Ultimate (LMU)** running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable.
+**simagic-wheel-daemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems (Alpha EVO Sport wheelbase, GT NEO steering wheel, P700 pedals). It provides automatic, per-vehicle profile switching in **Le Mans Ultimate (LMU)**, so each car gets the rev-light thresholds, buttons and FFB stored in its own SimPro profile, running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable.
 
 ---
 
@@ -47,7 +47,7 @@
                                     ▼ (USB HID -> CAN-FD Quick Release Pogo Pins)
 ┌────────────────────────────────────────────────────────────────────────┐
 │          Alpha EVO Sport Base   ──►   GT NEO Steering Wheel            │
-│   Profile activated instantly. Rev lights match in-game tachometer.    │
+│   Profile activated instantly: that car's rev lights, buttons & FFB.   │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,16 +80,59 @@ pip install -e .
 
 ---
 
+### ⚙️ First-Time Setup (generate your private config)
+
+The daemon needs two files that are specific to your hardware and your LMU install. They are
+generated on your machine into the gitignored `local/` folder and are never committed or shared.
+
+| File | Contains | Generated from |
+| :--- | :--- | :--- |
+| `local/user_presets.json` | Your device IDs and which SimPro profile to use for each car | SimPro Manager's local database |
+| `local/lmu_vehicle_catalog.json` | Every installed LMU car/livery ID with its model and class | LMU's REST API (`/rest/sessions/getAllVehicles`) |
+
+**1. Create your profiles in SimPro Manager.** Make one GT NEO profile per car (or class) you want, tag it
+with **Le Mans Ultimate** in SimPro, and name it after the car, e.g. `GT3 296`, `HYP Cadillac`, `LM P2`,
+`LMP3 Ginetta`. The setup tool recognises these names (and names containing the car, such as `Porsche 963`).
+Also create one wheelbase profile tagged LMU, and a wheel profile with `Default` in its name as fallback.
+
+**2. Generate `user_presets.json` from SimPro** (SimPro does not need to be running):
+```bash
+python tools/setup_user_presets.py --dry-run
+python tools/setup_user_presets.py
+```
+It lists which profile was matched to each key and which keys fall back to another profile. Unset keys are
+fine: for example, without a `HYP 499P` profile the Ferrari 499P uses `HYP Cadillac`. Run it again whenever
+you add profiles; existing values are kept unless you pass `--overwrite`.
+
+**3. Vehicle catalog: automatic.** LMU team liveries have IDs such as `12_24_JOTAA5525C5E` that do not name
+the car; the catalog lets the daemon identify every one of them exactly. The daemon builds and refreshes it by
+itself from LMU's REST API: once each time LMU starts, and again whenever a car it does not know is loaded
+(new DLC, game updates). If the current car is re-identified, its profile is switched right away.
+To build it by hand and see what was added (LMU running):
+```bash
+python tools/generate_vehicle_catalog.py
+```
+
+**4. Check the result:**
+```bash
+python tools/validate_vehicle_mapping.py
+```
+It resolves every vehicle ID in your catalog and reports any car that would get the wrong profile.
+
+---
+
 ### 🖥️ Windows Tray Application (Recommended)
 
 Run the daemon as a native Windows tray app that lives quietly in the taskbar notification area (system tray next to the Windows clock):
 
-* **Launch Silently (No Console Window)**: Double-click **`SimagicWheelDaemon.vbs`** or run:
+* **Launch**: Double-click **`SimagicWheelDaemon.bat`**, or the **Simagic Wheel Daemon** Start Menu shortcut
+  (create it once with `python tools/create_windows_shortcuts.py`). Both start the tray app silently with
+  `pythonw.exe SimagicWheelDaemon.pyw`: no console window and no VBScript, which recent Windows 11 builds
+  no longer ship enabled.
+* **From a terminal**:
   ```bash
-  pythonw -m simagic_daemon.tray
+  pythonw SimagicWheelDaemon.pyw
   ```
-  *(Or `simagic-tray` when installed via pip)*
-* **Launch with Console**: Double-click **`SimagicWheelDaemon.bat`**
 
 #### System Tray Controls (Right-Click Menu):
 * **Live Status Display**:
@@ -136,6 +179,12 @@ simagic-daemon
 | `--debug`, `-d` | Enable verbose debug logging to console and rotating file | `False` |
 | `--verbose`, `-v` | Enable verbose logging | `False` |
 | `--log-file` | Custom path for the rotating log file | `logs/daemon.log` |
+| `--no-catalog-sync` | Do not refresh the vehicle catalog from LMU's REST API automatically | `False` |
+| `--verify-interval` | Seconds between checks that the active profile still matches the car (re-applied if changed externally); `0` disables | `15` |
+| `--capture [DIR]` | Record raw LMU data (REST + shared memory) instead of running the daemon; replay with `python tools/replay_capture.py DIR` | `local/captures/<timestamp>` |
+
+Only one daemon (console or tray) can run at a time; a second instance exits immediately.
+`SimagicWheelDaemon.pyw` (used by the `.bat` and the shortcuts) always runs the code in this folder's `src/`, regardless of any other pip-installed copy.
 
 ---
 

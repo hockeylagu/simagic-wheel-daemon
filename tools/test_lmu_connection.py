@@ -27,7 +27,7 @@ def main():
     reader = LMUReader()
 
     # 1. Check LMU REST API
-    print("\n[1] Checking LMU embedded REST server (http://localhost:6397)...")
+    print("\n[1] Checking LMU embedded REST server (http://127.0.0.1:6397)...")
     rest_online = reader.is_rest_api_online()
     if rest_online:
         print("  [OK] LMU REST API is ONLINE!")
@@ -38,6 +38,19 @@ def main():
                 print(f"    * {k}: {v}")
         else:
             print("  [INFO] Connected to REST API, but no vehicle is currently loaded.")
+
+        # Show the raw standings fields so the player / vehicle / class keys can be verified
+        try:
+            import json, urllib.request
+            from simagic_daemon.lmu_reader import LMU_REST_STANDINGS_URL, _is_player_entry
+            with urllib.request.urlopen(LMU_REST_STANDINGS_URL, timeout=2) as resp:
+                standings = json.loads(resp.read().decode("utf-8"))
+            if isinstance(standings, list) and standings and isinstance(standings[0], dict):
+                print(f"  Standings entry fields: {sorted(standings[0].keys())}")
+                player = next((e for e in standings if isinstance(e, dict) and _is_player_entry(e)), None)
+                print(f"  Player entry: {player if player else 'NOT FOUND (no player flag recognised)'}")
+        except Exception as e:
+            print(f"  [INFO] Standings not available: {e}")
     else:
         print("  [--] LMU REST API is offline (game not running or not listening on port 6397).")
 
@@ -61,8 +74,9 @@ def main():
     active_car = reader.get_active_vehicle()
     if active_car:
         ident = active_car.get("identifier", "")
-        print(f"  [FOUND] Active Vehicle Identifier: '{ident}'")
-        model, uuid, preset_name = resolve_vehicle_to_preset(ident)
+        vehicle_class = active_car.get("classes") or active_car.get("class")
+        print(f"  [FOUND] Active Vehicle Identifier: '{ident}' (Class: {vehicle_class or 'n/a'})")
+        model, uuid, preset_name = resolve_vehicle_to_preset(ident, vehicle_class, active_car.get("manufacturer"))
         print(f"  -> Model Name       : {model}")
         print(f"  -> Target GT NEO    : '{preset_name}' (UUID: {uuid})")
     else:

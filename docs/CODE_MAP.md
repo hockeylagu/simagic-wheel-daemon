@@ -63,6 +63,9 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 | :--- | :--- | :--- |
 | **[`daemon.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/daemon.py)** | `SimagicWheelDaemon`, `main()` | Main execution service. Houses the polling loop, signal handlers (`SIGINT`/`SIGTERM`), state diffing, and CLI options (`--dry-run`, `--once`, `--poll-interval`, `--revert-on-exit`). |
 | **[`simagic_client.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/simagic_client.py)** | `SimagicClient`, `call_simpro_api()`, `switch_preset()`, `list_presets_from_db()` | High-level HTTP client interfacing with SimPro Manager's local REST API on `http://127.0.0.1:4010/simpro/api/v3/`. Also provides read-only SQLite inspection of `user.db`. |
+| **[`catalog_sync.py`](../src/simagic_daemon/catalog_sync.py)** | `refresh_catalog()`, `merge_rows()` | Adds unknown vehicle IDs from `GET /rest/sessions/getAllVehicles` to the vehicle catalog (append-only, atomic write). The daemon runs it in the background when LMU starts and when an unknown car is loaded. |
+| **[`capture.py`](../src/simagic_daemon/capture.py)** | `run_capture()`, `iter_capture()` | Records raw LMU REST documents and the rF2 scoring buffer (on change only) for offline verification and replay. |
+| **[`config.py`](../src/simagic_daemon/config.py)** | `load_config()`, `get_config_value()` | Locates and loads the private `user_presets.json` (hardware & preset UUIDs). |
 | **[`vehicle_mapping.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/vehicle_mapping.py)** | `resolve_vehicle_to_preset()`, `PRESET_MAP_GT_NEO` | Pure deterministic token resolution engine. Maps raw vehicle identifiers (`vehFile`, `carType`, `model`) to GT NEO and Base preset UUIDs. |
 | **[`lmu_reader.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/lmu_reader.py)** | `LMUReader` | Telemetry & session reader. Probes LMU's embedded REST server (`localhost:6397`) and rFactor 2 shared memory (`$rFactor2SMMP_Scoring$`). |
 | **[`tray.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/tray.py)** | `SimagicTrayApp`, `main()` | Windows System Tray application. Hosts the daemon in a background thread, shows real-time vehicle/profile indicators in the taskbar, and provides a context menu with actions (test notifications, launch SimPro, exit). |
@@ -82,6 +85,10 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 | **[`create_windows_shortcuts.py`](file:///c:/Documents/WheelDeamon/tools/create_windows_shortcuts.py)** | `python tools/create_windows_shortcuts.py` | Generates Desktop, Start Menu, and Startup `.lnk` shortcuts configured with the GT Neo icon. |
 | **[`update_icon.py`](file:///c:/Documents/WheelDeamon/tools/update_icon.py)** | `python tools/update_icon.py` | Converts source wheel images into centered 512x512 PNG and multi-resolution Windows ICO. |
 | **[`test_simagic_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_simagic_connection.py)** | `python tools/test_simagic_connection.py` | Standalone CLI diagnostic. Verifies SimPro REST API status (port 4010), catalogs all connected devices (Base, Wheel, Pedals) with firmware versions, and reads active presets. |
+| **[`validate_vehicle_mapping.py`](../tools/validate_vehicle_mapping.py)** | `python tools/validate_vehicle_mapping.py` | Resolves every real LMU vehicle ID in the vehicle catalog four ways (catalog, ID + class + make, ID + class, ID only) and reports which car/profile each picks versus the truth. |
+| **[`setup_user_presets.py`](../tools/setup_user_presets.py)** | `python tools/setup_user_presets.py` | Builds `user_presets.json` offline from SimPro's `user.db`: device UUIDs, the LMU wheelbase profile, and each GT NEO key matched to the LMU-tagged profile of the same name. Keeps existing values unless `--overwrite`. |
+| **[`generate_vehicle_catalog.py`](../tools/generate_vehicle_catalog.py)** | `python tools/generate_vehicle_catalog.py` | With LMU running, adds every installed car's vehicle ID from `GET /rest/sessions/getAllVehicles` to the vehicle catalog (`lmu_vehicle_catalog.json`, same search locations as `user_presets.json`). |
+| **[`replay_capture.py`](../tools/replay_capture.py)** | `python tools/replay_capture.py local/captures/<session>` | Replays raw LMU data recorded with `simagic-daemon --capture` through the current parsers and vehicle mapping; flags snapshots that now parse differently. |
 | **[`test_lmu_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_lmu_connection.py)** | `python tools/test_lmu_connection.py` | Standalone CLI diagnostic. Verifies LMU REST API and shared memory connectivity, testing vehicle resolution against a simulated grid. |
 
 ---
@@ -105,7 +112,7 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 | **[`SIMAGIC_RESEARCH_FINDINGS.md`](file:///c:/Documents/WheelDeamon/docs/SIMAGIC_RESEARCH_FINDINGS.md)** | SimPro Manager v3 reverse engineering, CEF architecture, HTTP REST server (`SInteractCEFQryServer.cpp`), SQLite storage schema, and CAN-FD USB transport layer. |
 | **[`SIMAGIC_TELEMETRY_AND_LEDS.md`](file:///c:/Documents/WheelDeamon/docs/SIMAGIC_TELEMETRY_AND_LEDS.md)** | Technical specification of telemetry items, per-car RPM threshold scaling, rev light configuration schemas, and shift alert payloads over CAN-FD. |
 | **[`LMU_API_AND_VEHICLE_MAPPING.md`](file:///c:/Documents/WheelDeamon/docs/LMU_API_AND_VEHICLE_MAPPING.md)** | Le Mans Ultimate embedded HTTP REST API reference (`:6397`) and token normalization logic for LMGT3, Hypercar, LMP2, and GTE grids. |
-| **[`ROADMAP_AND_ARCHITECTURE.md`](file:///c:/Documents/WheelDeamon/docs/ROADMAP_AND_ARCHITECTURE.md)** | Phase-by-phase implementation plan: Phase 1 (Profile Switching), Phase 2 (CAN-FD Dynamic LEDs), Phase 3 (Daemon Packaging & GUI). |
+| **[`ROADMAP_AND_ARCHITECTURE.md`](file:///c:/Documents/WheelDeamon/docs/ROADMAP_AND_ARCHITECTURE.md)** | Original phase plan. Phase 2 (CAN-FD Dynamic LEDs) is now a separate project; only profile switching is in scope here. |
 
 ---
 
@@ -130,12 +137,22 @@ Base URL: `http://127.0.0.1:4010/simpro/api/v3`
 ## 4. Common Recipes & Development Workflows
 
 ### Recipe A: Adding a New Vehicle or Profile
-1. Create and customize the profile in SimPro Manager v3 GUI.
-2. Run `python tools/test_simagic_connection.py` to obtain the new profile's `presetUUID`.
-3. Open `src/simagic_daemon/vehicle_mapping.py`:
-   - Add the new preset UUID to `PRESET_MAP_GT_NEO`.
-   - Add matching token checks inside `resolve_vehicle_to_preset()`.
-4. Test with `python tools/test_lmu_connection.py`.
+1. Create and customize the profile in SimPro Manager v3 GUI, tag it LMU and name it after the key's label (e.g. `HYP 499P`).
+2. Run `python tools/setup_user_presets.py` to add it to `user_presets.json`
+   (or put the preset UUID under its key in `"presets"` by hand, e.g. `"HYP_499P": "<uuid>"`).
+3. If LMU added cars or liveries, refresh the catalog: `python tools/generate_vehicle_catalog.py`.
+   Every car has its own key; unconfigured keys fall back along `PRESET_FALLBACKS` (ending at `DEFAULT`).
+4. For a car that is not yet recognised, add a `VehicleRule` to `VEHICLE_RULES` in
+   `src/simagic_daemon/vehicle_mapping.py` (class, model tokens, team tokens) plus its key in
+   `PRESET_MAP_GT_NEO`, `PRESET_LABELS` and, optionally, `PRESET_FALLBACKS`.
+5. Test with `python tools/test_lmu_connection.py`.
+
+### Where `user_presets.json` Is Loaded From
+`src/simagic_daemon/config.py` uses the first file found in:
+1. The path in the `SIMAGIC_DAEMON_CONFIG` environment variable
+2. `local/user_presets.json` in the current working directory
+3. `local/user_presets.json` in the repository root (editable installs)
+4. `%APPDATA%\SimagicWheelDaemon\user_presets.json` (regular `pip install`)
 
 ### Recipe B: Testing Daemon Detection Without LMU Running
 Run the daemon in dry-run single-step mode:

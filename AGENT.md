@@ -10,7 +10,7 @@ This document establishes the architectural standards, domain rules, safety cons
 
 ### Primary Goals:
 1. **Goal 1 (Automatic Profile Switching)**: Automatically detect when the driver loads into any vehicle in LMU, and immediately switch the active profile on both the **Wheelbase** (FFB, rotation angle, damping) and the **GT NEO Steering Wheel** (button bindings, clutch bite point, LED themes).
-2. **Goal 2 (Custom CAN-FD Rev Lights & Telemetry LEDs)**: Accurately match in-game tachometer RPM, shift points, pit limiter, and traction control (TC) alerts on the GT NEO's rev LEDs running **100% over CAN-FD** through the quick release pogo pins—without requiring a Maglink USB cable or third-party software like SimHub.
+* **Out of scope**: live, daemon-driven rev-light / telemetry LED streaming (formerly "Goal 2") is a separate project. This daemon only selects SimPro profiles; per-car rev-light thresholds live in those profiles. `docs/SIMAGIC_TELEMETRY_AND_LEDS.md` and `docs/ROADMAP_AND_ARCHITECTURE.md` are kept as background research only.
 
 ---
 
@@ -46,7 +46,7 @@ When writing code, refactoring, or modifying configurations, agents must adhere 
 * The `local/` folder is strictly private and gitignored (`local/`, `/local/`, `local/**`).
 * **NEVER stage, add, or commit files from `local/` to Git.**
 * `git add -f local/` is strictly prohibited.
-* Never document, describe, or list the contents of the `local/` folder in tracked repository documentation.
+* Never document, describe, or list the contents of the `local/` folder in tracked repository documentation. Documenting the *names* of the files the daemon expects there (`user_presets.json`, `lmu_vehicle_catalog.json`) and how users generate them (`tools/setup_user_presets.py`, `tools/generate_vehicle_catalog.py`) is allowed; their values (UUIDs, vehicle IDs) never appear in tracked files.
 
 
 
@@ -79,7 +79,7 @@ WheelDeamon/
 │   ├── SIMAGIC_RESEARCH_FINDINGS.md       # SimPro REST API protocol and IPC discovery
 │   ├── SIMAGIC_TELEMETRY_AND_LEDS.md      # Telemetry channels, RPM calculations & LED schemas
 │   ├── LMU_API_AND_VEHICLE_MAPPING.md     # LMU embedded REST endpoints & vehicle tokens
-│   └── ROADMAP_AND_ARCHITECTURE.md        # Technical roadmap (Profile Switching & CAN-FD LEDs)
+│   └── ROADMAP_AND_ARCHITECTURE.md        # Original roadmap (LED phase moved to a separate project)
 │
 ├── src/simagic_daemon/                    # Core Python package
 │   ├── __init__.py                        # Version and package exports
@@ -90,11 +90,18 @@ WheelDeamon/
 │   ├── process_utils.py                   # Process monitor for SimPro & LMU
 │   ├── simagic_client.py                  # HTTP client for SimPro Manager REST API
 │   ├── vehicle_mapping.py                 # LMU vehicle resolver & GT NEO preset map
+│   ├── config.py                          # Locates & loads private user_presets.json
+│   ├── capture.py                         # Records raw LMU data (--capture) for replay
+│   ├── catalog_sync.py                    # Self-healing vehicle catalog from LMU's REST API
 │   └── lmu_reader.py                      # Telemetry ingestion (REST API + Shared Memory)
 │
 ├── tools/                                 # Standalone CLI diagnostic utilities
 │   ├── test_simagic_connection.py         # Hardware discovery & SimPro REST API tester
 │   ├── test_lmu_connection.py             # LMU telemetry & vehicle resolver tester
+│   ├── replay_capture.py                  # Replays recorded LMU raw data through current code
+│   ├── validate_vehicle_mapping.py        # Checks the mapping against real LMU vehicle IDs
+│   ├── generate_vehicle_catalog.py        # Builds the vehicle ID catalog from LMU's REST API
+│   ├── setup_user_presets.py              # Builds user_presets.json from SimPro's database
 │   ├── view_logs.py                       # Inspect & follow daemon debug logs
 │   ├── create_windows_shortcuts.py        # Desktop / Start Menu shortcut generator
 │   └── update_icon.py                     # Generates app icons from authentic wheel image
@@ -107,7 +114,7 @@ WheelDeamon/
 ├── logs/                                  # [GITIGNORED] Rotating log outputs (daemon.log)
 │
 ├── SimagicWheelDaemon.bat                 # Windows batch launcher (Console mode)
-├── SimagicWheelDaemon.vbs                 # Windows silent VBS launcher (System Tray mode)
+├── SimagicWheelDaemon.pyw                 # Silent tray launcher (pythonw; runs this checkout's src/)
 │
 ├── AGENT.md                               # Agent guidelines and architectural standards
 ├── CODE_MAP.md                            # Code map link / quick reference
@@ -142,6 +149,7 @@ WheelDeamon/
   ```
 * Whenever modifying LMU vehicle mapping, run:
   ```bash
+  python tools/validate_vehicle_mapping.py
   python tools/test_lmu_connection.py
   ```
 * Test daemon poll iterations with:

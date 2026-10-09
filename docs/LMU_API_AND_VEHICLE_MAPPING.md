@@ -69,6 +69,8 @@ Extracted from `LMULapTime/shared/domain/vehicleMapping.ts` and mapped directly 
 
 If the embedded web server on port 6397 is blocked or during active on-track sessions where HTTP polling is paused:
 * WheelDaemon reads `$rFactor2SMMP_Scoring$`.
-* Player index: `mPlayerCarID`.
-* Vehicle name field: `mVehicleInfo[playerID].mVehicleName`.
-* Pass the string into `resolve_vehicle_to_preset(name)` in [`lmu_vehicle_mapping.py`](file:///c:/Documents/WheelDeamon/lmu_vehicle_mapping.py).
+* Requires the rF2 Shared Memory Map plugin to be enabled in LMU.
+* The daemon walks `mVehicles[0..mNumVehicles)` and picks the record with `mIsPlayer` set.
+* Vehicle name / class fields: `mVehicleName` / `mVehicleClass` (the class feeds the class-aware mapping).
+* Reads are retried when `mVersionUpdateBegin != mVersionUpdateEnd` (buffer mid-write).
+* Pass the string into `resolve_vehicle_to_preset(name, vehicle_class)` in [`vehicle_mapping.py`](../src/simagic_daemon/vehicle_mapping.py).

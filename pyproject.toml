@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "simagic-wheel-daemon"
 version = "0.1.0"
-description = "Standalone automation daemon for Simagic hardware: automatic LMU profile switching and custom CAN-FD rev lights."
+description = "Standalone automation daemon for Simagic hardware: automatic per-car SimPro profile switching for Le Mans Ultimate."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

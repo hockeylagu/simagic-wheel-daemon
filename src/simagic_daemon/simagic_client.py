@@ -13,21 +13,13 @@ from typing import Dict, List, Optional, Any
 API_BASE_URL = "http://127.0.0.1:4010/simpro/api/v3"
 USER_DB_PATH = os.path.expandvars(r"%LOCALAPPDATA%\Simagic\Simpro3\storage\user.db")
 
-# Known Product UUIDs
-DEFAULT_BASE_PRODUCT_UUID = "17301504"            # Simagic EVO Base (Alpha)
-DEFAULT_BASE_DEVICE_UUID = ""                     # Dynamically discovered or loaded from local/
+from .config import get_config_value
 
-# Check local gitignored config if available
-_LOCAL_CONFIG = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "local", "user_presets.json")
-)
-if os.path.exists(_LOCAL_CONFIG):
-    try:
-        with open(_LOCAL_CONFIG, "r", encoding="utf-8") as f:
-            _cfg = json.load(f)
-            DEFAULT_BASE_DEVICE_UUID = str(_cfg.get("base_device_uuid", ""))
-    except Exception:
-        pass
+# Known Product UUIDs (overridable from the private user_presets.json, see config.py)
+DEFAULT_BASE_PRODUCT_UUID = get_config_value("base_product_uuid", "17301504")    # Simagic EVO Base (Alpha)
+DEFAULT_BASE_DEVICE_UUID = get_config_value("base_device_uuid", "")              # Dynamically discovered or loaded from config
+DEFAULT_WHEEL_PRODUCT_UUID = get_config_value("wheel_product_uuid", "33947648")  # GT NEO
+DEFAULT_WHEEL_DEVICE_UUID = get_config_value("wheel_device_uuid", "33947648")
 
 
 import logging
@@ -94,6 +86,19 @@ def list_presets_from_db(product_uuid: Optional[str] = None) -> List[Dict[str, A
     return presets
 
 
+def get_preset_name_from_db(preset_uuid: str) -> Optional[str]:
+    """Looks up a preset's display name in SimPro's local database. Returns None if unavailable."""
+    if not preset_uuid:
+        return None
+    try:
+        for preset in list_presets_from_db():
+            if str(preset["uuid"]) == str(preset_uuid):
+                return preset["name"]
+    except Exception as e:
+        logger.debug(f"[SimPro DB] Preset name lookup failed: {e}")
+    return None
+
+
 def list_presets_from_api(
     product_uuid: str = DEFAULT_BASE_PRODUCT_UUID,
     device_uuid: str = DEFAULT_BASE_DEVICE_UUID
@@ -126,6 +131,28 @@ def switch_preset(
         return False
 
 
+def _selected_preset_uuid(product_uuid: str, device_uuid: str) -> Optional[str]:
+    """
+    Returns the preset UUID currently active on a device, or None when it cannot be determined
+    (SimPro offline, device powered off, or an unexpected response shape).
+    """
+    res = call_simpro_api("preset_get_selected_dev_config", {
+        "product_uuid": str(product_uuid),
+        "device_uuid": str(device_uuid)
+    })
+    if res.get("status") != 200:
+        return None
+    result = res.get("result")
+    if isinstance(result, (str, int)) and str(result):
+        return str(result)
+    if isinstance(result, dict):
+        for key in ("preset_uuid", "presetUUID", "presetUuid", "uuid"):
+            if result.get(key) not in (None, ""):
+                return str(result[key])
+    logger.debug(f"[SimPro API] Unrecognised preset_get_selected_dev_config result: {result!r}")
+    return None
+
+
 class SimagicClient:
     """High-level client for SimPro Manager v3."""
 
@@ -133,8 +160,8 @@ class SimagicClient:
         self,
         base_product_uuid: str = DEFAULT_BASE_PRODUCT_UUID,
         base_device_uuid: str = DEFAULT_BASE_DEVICE_UUID,
-        wheel_product_uuid: str = "33947648",
-        wheel_device_uuid: str = "33947648"
+        wheel_product_uuid: str = DEFAULT_WHEEL_PRODUCT_UUID,
+        wheel_device_uuid: str = DEFAULT_WHEEL_DEVICE_UUID
     ):
         self.base_product_uuid = base_product_uuid
         self.base_device_uuid = base_device_uuid
@@ -156,18 +183,10 @@ class SimagicClient:
         return switch_preset(preset_uuid, self.wheel_product_uuid, self.wheel_device_uuid)
 
     def get_selected_base_preset(self) -> Optional[str]:
-        res = call_simpro_api("preset_get_selected_dev_config", {
-            "product_uuid": self.base_product_uuid,
-            "device_uuid": self.base_device_uuid
-        })
-        return res.get("result", {}).get("preset_uuid") if res.get("status") == 200 else None
+        return _selected_preset_uuid(self.base_product_uuid, self.base_device_uuid)
 
     def get_selected_wheel_preset(self) -> Optional[str]:
-        res = call_simpro_api("preset_get_selected_dev_config", {
-            "product_uuid": self.wheel_product_uuid,
-            "device_uuid": self.wheel_device_uuid
-        })
-        return res.get("result", {}).get("preset_uuid") if res.get("status") == 200 else None
+        return _selected_preset_uuid(self.wheel_product_uuid, self.wheel_device_uuid)
 
 
 
