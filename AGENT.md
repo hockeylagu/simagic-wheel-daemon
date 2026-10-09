@@ -43,23 +43,24 @@ When writing code, refactoring, or modifying configurations, agents must adhere 
 * SimPro's C++ JSON parser strictly enforces that `product_uuid`, `device_uuid`, and `preset_uuid` must be **strings**, not numbers. Passing numeric integers triggers `type_error.302`. Always pass them as `str(uuid)`.
 
 ### 🛡️ F. Strict Local Workspace Isolation (`local/` Directory)
-* The `local/` directory is strictly reserved for the user's personal scratchpad, personal notes, raw telemetry dumps, and experimental research (e.g., `local_notes.txt`, `local_profiles.json`, etc.).
-* **The `local/` folder MUST ALWAYS remain `.gitignored`** (`local/`, `/local/`, `local/**`).
+* The `local/` folder is strictly private and gitignored (`local/`, `/local/`, `local/**`).
 * **NEVER stage, add, or commit files from `local/` to Git.**
 * `git add -f local/` is strictly prohibited.
-* Agents may read files in `local/` for domain context when relevant, but must never track, expose, or commit them into the repository.
+* Never document, describe, or list the contents of the `local/` folder in tracked repository documentation.
+
 
 
 ---
 
 ## 3. Hardware Identifiers & Environment Topology
 
-### Physical Hardware on Host System:
-| Device | Product Name | Product UUID (Dec / Hex) | Device UUID (Dec / Hex) | Firmware | Role |
+### Physical Hardware Topology:
+| Device | Product Name | Product UUID (Dec / Hex) | Device UUID | Firmware | Role |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Base** | Alpha EVO Sport | `'17301504'` (`0x01080000`) | `'<BASE_DEVICE_UUID>'` (`<HEX_DEVICE_UUID>`) | `V2.3.6` | Direct-drive FFB & CAN-FD Master |
-| **Wheel** | GT NEO | `'33947648'` (`0x02060000`) | `'33947648'` (`0x02060000`) | `V1.4.4` | CAN-FD Slave (Buttons, Clutch, LEDs) |
-| **Pedals** | P700 | `'50724864'` (`0x03060000`) | `'<PEDAL_DEVICE_UUID>'` (`<HEX_DEVICE_UUID>`) | `A1.1.0` | Load cell / Hall sensor pedal curves |
+| **Base** | Alpha EVO Sport | `'17301504'` (`0x01080000`) | `<BASE_DEVICE_UUID>` | `V2.x` | Direct-drive FFB & CAN-FD Master |
+| **Wheel** | GT NEO | `'33947648'` (`0x02060000`) | `'33947648'` | `V1.x` | CAN-FD Slave (Buttons, Clutch, LEDs) |
+| **Pedals** | P700 | `'50724864'` (`0x03060000`) | `<PEDAL_DEVICE_UUID>` | `A1.x` | Load cell / Hall sensor pedal curves |
+
 
 ### Software Endpoints:
 * **SimPro Manager v3 Local REST Server**: `http://127.0.0.1:4010/simpro/api/v3/`
@@ -102,7 +103,7 @@ WheelDeamon/
 │   ├── icon.ico                           # Multi-resolution Windows icon (16px to 256px)
 │   └── icon.png                           # 512x512 RGBA application icon
 │
-├── local/                                 # [GITIGNORED] Personal scratchpad, notes & user telemetry dumps
+├── local/                                 # [GITIGNORED] Local private directory (never committed)
 ├── logs/                                  # [GITIGNORED] Rotating log outputs (daemon.log)
 │
 ├── SimagicWheelDaemon.bat                 # Windows batch launcher (Console mode)
@@ -150,23 +151,14 @@ WheelDeamon/
 
 ---
 
-## 6. Vehicle Mapping Matrix (Quick Reference)
+## 6. Vehicle Mapping Architecture (Quick Reference)
 
-| In-Game Vehicle Class / Token | GT NEO Profile Name | SimPro Preset UUID |
-| :--- | :--- | :--- |
-| **Ferrari 296 GT3** (`296`, `AFCO`) | `GT3 296` | `<WHEEL_PRESET_UUID_296>` |
-| **McLaren 720S GT3 Evo** (`720S`, `GARA`, `GCHAL`) | `GT3 720S` | `<WHEEL_PRESET_UUID_720S>` |
-| **Porsche 911 GT3 R** (`911`, `MANT`) | `GT3 911` | `<WHEEL_PRESET_UUID_911>` |
-| **BMW M4 GT3** (`M4`, `WRT`) | `GT3 M4` | `<WHEEL_PRESET_UUID_M4>` |
-| **Ford Mustang GT3** (`MUSTANG`, `PROT`) | `GT3 Mustang` | `<WHEEL_PRESET_UUID_MUSTANG>` |
-| **Lexus RC F GT3** (`LEXUS`, `RCF`, `AKKO`) | `GT3 RCF` | `<WHEEL_PRESET_UUID_RCF>` |
-| **Corvette Z06 GT3.R** (`CORVETTE`, `Z06`, `TFSP`) | `GT3 Vette` | `<WHEEL_PRESET_UUID_VETTE>` |
-| **Aston Martin Vantage GTE** (`DSTATI`, `AMR GTE`) | `GTE AMR` | `<WHEEL_PRESET_UUID_AMR>` |
-| **Cadillac V-Series.R** (`CADILLAC`, `V-SERIES`) | `HYP Cadillac` | `<WHEEL_PRESET_UUID_CADILLAC>` |
-| **Peugeot 9X8** (`PEUGEOT`, `9X8`) | `HYP Peugeot` | `<WHEEL_PRESET_UUID_PEUGEOT>` |
-| **Aston Martin Valkyrie LMH** (`VALKYRIE`, `007_`) | `HYP Valkyrie` | `<WHEEL_PRESET_UUID_VALKYRIE>` |
-| **Oreca 07 LMP2** (`ORECA`, `07_LMP2`, `VECTOR`) | `LM P2` | `<WHEEL_PRESET_UUID_LMP2>` |
-| **Ginetta G61-LT-P325 LMP3** (`GINETTA`, `G61`, `LMP3`) | `LMP3 Ginetta` | `<WHEEL_PRESET_UUID_GINETTA>` |
-| **Default Fallback** | `My GT Neo Default` | `<WHEEL_PRESET_UUID_DEFAULT>` |
+The daemon resolves raw in-game vehicle identifiers (`vehFile`, `carType`, `model`) deterministically to friendly vehicle names and corresponding profile presets.
 
-*Wheelbase profile targets **`My LeMans Ultimate`** (`<BASE_PRESET_UUID>`).*
+* **Wheelbase Profile**: Automatically activates the configured wheelbase direct-drive profile.
+* **GT NEO Steering Wheel**: Automatically maps car classes (LMGT3, Hypercar, LMP2, GTE) to custom steering wheel profiles (buttons, rev light LED thresholds, bite-point).
+* **Discovering User Presets**: User presets can be inspected and verified dynamically using:
+  ```bash
+  python tools/test_simagic_connection.py
+  ```
+

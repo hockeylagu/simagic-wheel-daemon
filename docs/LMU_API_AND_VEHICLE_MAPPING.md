@@ -43,24 +43,25 @@ Returns the simulation's navigation lifecycle and the currently selected/loaded 
 
 Extracted from `LMULapTime/shared/domain/vehicleMapping.ts` and mapped directly to your Simagic presets:
 
-| In-Game Token / vehFile | Detected Model | Target GT NEO Preset | Preset UUID |
-| :--- | :--- | :--- | :--- |
-| `296`, `AFCO` | **Ferrari 296 GT3** | **`GT3 296`** | `<WHEEL_PRESET_UUID_296>` |
-| `720S`, `GARA`, `GCHAL` | **McLaren 720S GT3 Evo** | **`GT3 720S`** | `<WHEEL_PRESET_UUID_720S>` |
-| `911`, `MANT` | **Porsche 911 GT3 R** | **`GT3 911`** | `<WHEEL_PRESET_UUID_911>` |
-| `M4`, `WRT` | **BMW M4 GT3** | **`GT3 M4`** | `<WHEEL_PRESET_UUID_M4>` |
-| `MUSTANG`, `PROT` | **Ford Mustang GT3** | **`GT3 Mustang`** | `<WHEEL_PRESET_UUID_MUSTANG>` |
-| `RCF`, `LEXUS`, `AKKO` | **Lexus RC F GT3** | **`GT3 RCF`** | `<WHEEL_PRESET_UUID_RCF>` |
-| `CORVETTE`, `Z06`, `TFSP` | **Corvette Z06 GT3.R** | **`GT3 Vette`** | `<WHEEL_PRESET_UUID_VETTE>` |
-| `DSTATI`, `AMR GTE` | **Aston Martin Vantage GTE** | **`GTE AMR`** | `<WHEEL_PRESET_UUID_AMR>` |
-| `CADILLAC`, `V-SERIES`, `WTR` | **Cadillac V-Series.R** | **`HYP Cadillac`** | `<WHEEL_PRESET_UUID_CADILLAC>` |
-| `9X8`, `PEUGEOT` | **Peugeot 9X8** | **`HYP Peugeot`** | `<WHEEL_PRESET_UUID_PEUGEOT>` |
-| `VALKYRIE`, `007_`, `THO7` | **Aston Martin Valkyrie LMH** | **`HYP Valkyrie`** | `<WHEEL_PRESET_UUID_VALKYRIE>` |
-| `ORECA`, `LMP2`, `VECTOR` | **Oreca 07 LMP2** | **`LM P2`** | `<WHEEL_PRESET_UUID_LMP2>` |
-| `GINETTA`, `G61` | **Ginetta G61-LT-P325 Evo** | **`LMP3 Ginetta`** | `<WHEEL_PRESET_UUID_GINETTA>` |
-| *(Any Unrecognized Vehicle)* | Fallback Default | **`My GT Neo Default`** | `<WHEEL_PRESET_UUID_DEFAULT>` |
+| In-Game Token / vehFile | Detected Model | Target Profile Name |
+| :--- | :--- | :--- |
+| `296`, `AFCO` | **Ferrari 296 GT3** | **`GT3 296`** |
+| `720S`, `GARA`, `GCHAL` | **McLaren 720S GT3 Evo** | **`GT3 720S`** |
+| `911`, `MANT` | **Porsche 911 GT3 R** | **`GT3 911`** |
+| `M4`, `WRT` | **BMW M4 GT3** | **`GT3 M4`** |
+| `MUSTANG`, `PROT` | **Ford Mustang GT3** | **`GT3 Mustang`** |
+| `RCF`, `LEXUS`, `AKKO` | **Lexus RC F GT3** | **`GT3 RCF`** |
+| `CORVETTE`, `Z06`, `TFSP` | **Corvette Z06 GT3.R** | **`GT3 Vette`** |
+| `DSTATI`, `AMR GTE` | **Aston Martin Vantage GTE** | **`GTE AMR`** |
+| `CADILLAC`, `V-SERIES`, `WTR` | **Cadillac V-Series.R** | **`HYP Cadillac`** |
+| `9X8`, `PEUGEOT` | **Peugeot 9X8** | **`HYP Peugeot`** |
+| `VALKYRIE`, `007_`, `THO7` | **Aston Martin Valkyrie LMH** | **`HYP Valkyrie`** |
+| `ORECA`, `LMP2`, `VECTOR` | **Oreca 07 LMP2** | **`LM P2`** |
+| `GINETTA`, `G61` | **Ginetta G61-LT-P325 Evo** | **`LMP3 Ginetta`** |
+| *(Any Unrecognized Vehicle)* | Fallback Default | **`Default Profile`** |
 
-*Note: Wheelbase is simultaneously assigned to **`My LeMans Ultimate`** (`<BASE_PRESET_UUID>`).*
+*Note: Wheelbase profile is simultaneously assigned to the configured wheelbase profile.*
+
 
 ---
 

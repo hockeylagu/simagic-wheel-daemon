@@ -95,13 +95,13 @@ SimPro hosts an unauthenticated HTTP REST server on `http://127.0.0.1:4010/simpr
     "status": 200,
     "result": [
       {
-        "presetUUID": "<BASE_PRESET_UUID>",
-        "presetName": "My LeMans Ultimate",
+        "presetUUID": "<USER_PRESET_UUID_1>",
+        "presetName": "Custom Profile",
         "isOffical": false,
         "gameName_list": ["lmu"]
       },
       {
-        "presetUUID": "<DEFAULT_PRESET_UUID>",
+        "presetUUID": "<OFFICIAL_PRESET_UUID>",
         "presetName": "LeMans Ultimate",
         "isOffical": true,
         "gameName_list": ["lmu"]
@@ -117,7 +117,7 @@ SimPro hosts an unauthenticated HTTP REST server on `http://127.0.0.1:4010/simpr
   {
     "product_uuid": "17301504",
     "device_uuid": "<BASE_DEVICE_UUID>",
-    "preset_uuid": "<BASE_PRESET_UUID>"
+    "preset_uuid": "<TARGET_PRESET_UUID>"
   }
   ```
 * **Effect:** SimPro fetches the binary profile parameters from the database, unpacks them, validates them, and pushes the runtime FFB settings to the base immediately over USB HID.
@@ -142,13 +142,13 @@ SimPro hosts an unauthenticated HTTP REST server on `http://127.0.0.1:4010/simpr
 
 All values verified live via read-only queries to `http://127.0.0.1:4010/simpro/api/v3/`:
 
-| Device Type | Model Name | Firmware | Product UUID (Dec / Hex) | Device UUID (Dec / Hex) | Live State |
+| Device Type | Model Name | Firmware | Product UUID (Dec / Hex) | Device UUID | Live State |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Wheelbase** | **Alpha EVO Sport** (`EVO Sports`) | `V2.3.6` | `17301504` / `0x01080000` | `<BASE_DEVICE_UUID>` / `<HEX_DEVICE_UUID>` | Online (`576`), Angle: `900°` |
-| **Pedals** | **Simagic P700** | `A1.1.0` | `50724864` / `0x03060000` | `<PEDAL_DEVICE_UUID>` / `<HEX_DEVICE_UUID>` | Online (`576`) |
-| **Steering Wheel** | **Simagic GT NEO** | `V1.4.4` | `33947648` / `0x02060000` | `33947648` / `0x0000000002060000` | Online (`576`) |
+| **Wheelbase** | **Alpha EVO Sport** (`EVO Sports`) | `V2.x` | `17301504` / `0x01080000` | `<BASE_DEVICE_UUID>` | Online (`576`), Angle: `900°` |
+| **Pedals** | **Simagic P700** | `A1.x` | `50724864` / `0x03060000` | `<PEDAL_DEVICE_UUID>` | Online (`576`) |
+| **Steering Wheel** | **Simagic GT NEO** | `V1.x` | `33947648` / `0x02060000` | `33947648` / `0x02060000` | Online (`576`) |
 
-* **Current Active Preset on Wheelbase**: `<BASE_PRESET_UUID>` (**"My LeMans Ultimate"**)
+* **Current Active Preset on Wheelbase**: `<ACTIVE_PRESET_UUID>` (**"LeMans Ultimate"**)
 * **Live Telemetry Output (Read-Only)**: `max_wheel_angle: 900°`, `wheel_angle: 0°`, `torque: 65530`
 
 
@@ -162,7 +162,7 @@ SimPro stores presets and user settings in:
 ### Key Tables in `user.db`:
 1. **`preset`**:
    * `id`: Auto-incrementing integer.
-   * `presetName`: User-friendly display name (e.g., `"My LeMans Ultimate"`, `"720S GT3"`).
+   * `presetName`: User-friendly display name (e.g., `"LeMans Ultimate"`, `"GT3 720S"`).
    * `presetUUID`: Unique 64-bit integer ID stored as text.
    * `productUUID`: Target device type (e.g., `17301504` for wheelbase).
    * `deviceUUID`: Target physical device identifier.
@@ -170,7 +170,8 @@ SimPro stores presets and user settings in:
    * `presetData`: **Google Protocol Buffers (Protobuf)** binary blob containing the full FFB tuning curve, maximum steering angle, damper, friction, inertia, feedback frequency, and LED layout.
 2. **`setting`**:
    * Stores the current active preset for each device (`settingKey = 'selected_preset'`).
-   * Stores the auto-switch config (e.g. `'{"basePresetId":"<BASE_PRESET_UUID>","useAutoSwitch":true}'`).
+   * Stores the auto-switch config (e.g. `'{"basePresetId":"<PRESET_UUID>","useAutoSwitch":true}'`).
+
 
 ---
 

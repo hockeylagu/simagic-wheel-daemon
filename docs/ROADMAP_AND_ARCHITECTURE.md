@@ -67,7 +67,7 @@ You already have exact presets created in SimPro for almost all LMU cars. WheelD
     "base_preset_uuid": "<BASE_PRESET_UUID>"
   },
   "Oreca 07 Gibson": {
-    "wheel_preset_uuid": "<WHEEL_PRESET_UUID_LMP2>",
+    "wheel_preset_uuid": "<WHEEL_PRESET_UUID_ORECA>",
     "base_preset_uuid": "<BASE_PRESET_UUID>"
   }
 }

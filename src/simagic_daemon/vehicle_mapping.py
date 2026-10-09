@@ -9,40 +9,59 @@ to Simagic hardware preset UUIDs for:
 
 from typing import Tuple, Dict, Any, Optional
 
-# Simagic Hardware UUID Defaults
-DEFAULT_BASE_PRESET_UUID = "<BASE_PRESET_UUID>"      # 'My LeMans Ultimate'
-DEFAULT_PEDAL_PRESET_UUID = "<PEDAL_PRESET_UUID>"     # 'My Default Linear'
+import os
+import json
+import logging
 
-# User's GT NEO Presets (cataloged from user.db)
+logger = logging.getLogger("simagic_daemon.mapping")
+
+# Default template preset mapping
+DEFAULT_BASE_PRESET_UUID = ""
+DEFAULT_PEDAL_PRESET_UUID = ""
+
 PRESET_MAP_GT_NEO = {
     # GT3 / LMGT3
-    "GT3_296":     "<WHEEL_PRESET_UUID_296>",  # 'GT3 296'
-    "GT3_720S":    "<WHEEL_PRESET_UUID_720S>",  # 'GT3 720S'
-    "GT3_911":     "<WHEEL_PRESET_UUID_911>",  # 'GT3 911'
-    "GT3_M4":      "<WHEEL_PRESET_UUID_M4>",  # 'GT3 M4'
-    "GT3_MUSTANG": "<WHEEL_PRESET_UUID_MUSTANG>",  # 'GT3 Mustang'
-    "GT3_RCF":     "<WHEEL_PRESET_UUID_RCF>",  # 'GT3 RCF'
-    "GT3_VETTE":   "<WHEEL_PRESET_UUID_VETTE>",  # 'GT3 Vette'
+    "GT3_296":     "",
+    "GT3_720S":    "",
+    "GT3_911":     "",
+    "GT3_M4":      "",
+    "GT3_MUSTANG": "",
+    "GT3_RCF":     "",
+    "GT3_VETTE":   "",
 
     # GTE
-    "GTE_AMR":     "<WHEEL_PRESET_UUID_AMR>",  # 'GTE AMR'
+    "GTE_AMR":     "",
 
     # Hypercar / LMH / LMDh
-    "HYP_CADILLAC": "<WHEEL_PRESET_UUID_CADILLAC>",  # 'HYP Cadillac'
-    "HYP_PEUGEOT":  "<WHEEL_PRESET_UUID_PEUGEOT>",  # 'HYP Peugeot'
-    "HYP_VALKYRIE": "<WHEEL_PRESET_UUID_VALKYRIE>",  # 'HYP Valkyrie'
+    "HYP_CADILLAC": "",
+    "HYP_PEUGEOT":  "",
+    "HYP_VALKYRIE": "",
 
     # LMP2 & LMP3
-    "LM_P2":        "<WHEEL_PRESET_UUID_LMP2>",  # 'LM P2'
-    "WEC_P2":       "<WHEEL_PRESET_UUID_WECP2>",  # 'WEC P2'
-    "LMP3_GINETTA": "<WHEEL_PRESET_UUID_GINETTA>",  # 'LMP3 Ginetta'
+    "LM_P2":        "",
+    "WEC_P2":       "",
+    "LMP3_GINETTA": "",
 
     # Default fallback
-    "DEFAULT":      "<WHEEL_PRESET_UUID_DEFAULT>",  # 'My GT Neo Default'
+    "DEFAULT":      "",
 }
 
+# Dynamically load from gitignored local configuration if present
+_LOCAL_PRESETS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "local", "user_presets.json")
+)
+if os.path.exists(_LOCAL_PRESETS_PATH):
+    try:
+        with open(_LOCAL_PRESETS_PATH, "r", encoding="utf-8") as _f:
+            _data = json.load(_f)
+            DEFAULT_BASE_PRESET_UUID = str(_data.get("base_preset_uuid", ""))
+            DEFAULT_PEDAL_PRESET_UUID = str(_data.get("pedal_preset_uuid", ""))
+            if "presets" in _data:
+                for _k, _v in _data["presets"].items():
+                    PRESET_MAP_GT_NEO[_k] = str(_v)
+    except Exception as _e:
+        logger.warning(f"Failed to load local presets: {_e}")
 
-import logging
 
 logger = logging.getLogger("simagic_daemon.mapping")
 

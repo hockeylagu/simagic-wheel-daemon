@@ -13,9 +13,21 @@ from typing import Dict, List, Optional, Any
 API_BASE_URL = "http://127.0.0.1:4010/simpro/api/v3"
 USER_DB_PATH = os.path.expandvars(r"%LOCALAPPDATA%\Simagic\Simpro3\storage\user.db")
 
-# Known Product & Device UUIDs detected on this system
+# Known Product UUIDs
 DEFAULT_BASE_PRODUCT_UUID = "17301504"            # Simagic EVO Base (Alpha)
-DEFAULT_BASE_DEVICE_UUID = "<BASE_DEVICE_UUID>"  # Persistent Wheelbase UUID
+DEFAULT_BASE_DEVICE_UUID = ""                     # Dynamically discovered or loaded from local/
+
+# Check local gitignored config if available
+_LOCAL_CONFIG = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "local", "user_presets.json")
+)
+if os.path.exists(_LOCAL_CONFIG):
+    try:
+        with open(_LOCAL_CONFIG, "r", encoding="utf-8") as f:
+            _cfg = json.load(f)
+            DEFAULT_BASE_DEVICE_UUID = str(_cfg.get("base_device_uuid", ""))
+    except Exception:
+        pass
 
 
 import logging

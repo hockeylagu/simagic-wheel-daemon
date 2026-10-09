@@ -27,7 +27,7 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 ┌────────────────────────────────────────────────────────────────────────┐
 │          src/simagic_daemon/vehicle_mapping.py (Resolver)              │
 │  Matches vehicle token to friendly name & SimPro Preset UUID           │
-│  Output: ('Ferrari 296 GT3', '<WHEEL_PRESET_UUID_296>', 'GT3 296')        │
+│  Output: ('Ferrari 296 GT3', '<TARGET_PRESET_UUID>', 'GT3 296')        │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ Stage 3: Target Preset UUID
                                     ▼
@@ -90,7 +90,8 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 
 | Path | Tracking Status | Responsibility |
 | :--- | :--- | :--- |
-| **[`local/`](file:///c:/Documents/WheelDeamon/local/)** | **Strictly Gitignored** | Personal user scratchpad, private notes, optimal shift points (`local_notes.txt`), and telemetry experiments. Never tracked or committed. |
+| **[`local/`](file:///c:/Documents/WheelDeamon/local/)** | **Strictly Gitignored** | Local private folder. Never tracked or committed. |
+
 | **[`logs/`](file:///c:/Documents/WheelDeamon/logs/)** | **Strictly Gitignored** | Daemon runtime rotating log files (`daemon.log`). |
 | **[`assets/`](file:///c:/Documents/WheelDeamon/assets/)** | Tracked in Git | Application icons (`icon.png`, `icon.ico`) featuring the authentic GT Neo butterfly wheel. |
 
