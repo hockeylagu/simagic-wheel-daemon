@@ -5,7 +5,7 @@
 [![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
 [![CAN-FD Native](https://img.shields.io/badge/CAN--FD-Quick%20Release-brightgreen.svg)]()
 
-**simagic-wheel-daemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems (Alpha EVO Sport wheelbase, GT NEO steering wheel, P700 pedals). It provides automatic, per-vehicle profile switching and accurate RPM rev light calibration in **Le Mans Ultimate (LMU)** running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable or third-party tools like SimHub.
+**simagic-wheel-daemon** is a lightweight, standalone automation daemon for **Simagic** direct-drive ecosystems (Alpha EVO Sport wheelbase, GT NEO steering wheel, P700 pedals). It provides automatic, per-vehicle profile switching and accurate RPM rev light calibration in **Le Mans Ultimate (LMU)** running **100% over CAN-FD** through the Simagic Quick Release—without requiring a Maglink USB cable.
 
 ---
 
@@ -15,7 +15,8 @@
 * **🏎️ CAN-FD Quick Release Operation:** Communicates through the quick release pogo pins via native CAN-FD. No Maglink USB cable required; keep your cockpit wireless and clutter-free.
 * **🛡️ 100% Safe (Zero Bricking Risk):** Interacts exclusively with SimPro Manager's official local REST API (`http://127.0.0.1:4010/simpro/api/v3/`). Never touches microcontroller flash or bootloaders; all adjustments update volatile RAM runtime parameters identically to official GUI clicks.
 * **🔒 Anti-Cheat Compliant:** Reads LMU game states using LMU's embedded HTTP REST API (`http://localhost:6397`) and official rFactor 2 shared memory (`$rFactor2SMMP_Scoring$`). Zero DLL injection, zero memory hooks.
-* **🚫 SimHub-Free Standalone Engine:** Operates completely independently without SimHub or third-party plugin bloat.
+* **📦 Lightweight & Standalone:** Operates as a focused, self-contained background service that directly bridges LMU and SimPro Manager without unnecessary overhead.
+
 
 ---
 
@@ -52,35 +53,10 @@
 
 ---
 
-## 📁 Repository Structure
+## 🗺️ Code Map & Documentation
 
-Adhering to standard Python packaging best practices:
-
-```
-simagic-wheel-daemon/
-├── docs/                                  # In-depth technical specifications & research
-│   ├── SIMAGIC_RESEARCH_FINDINGS.md       # SimPro reverse engineering & REST API protocol
-│   ├── SIMAGIC_TELEMETRY_AND_LEDS.md      # Telemetry channels, RPM calculations & LED schemas
-│   ├── LMU_API_AND_VEHICLE_MAPPING.md     # LMU embedded REST endpoints & vehicle tokens
-│   └── ROADMAP_AND_ARCHITECTURE.md        # Technical roadmap (Profile Switching & CAN-FD LEDs)
-│
-├── src/simagic_daemon/                    # Core daemon package
-│   ├── __init__.py                        # Package exports & version
-│   ├── __main__.py                        # python -m simagic_daemon entrypoint
-│   ├── daemon.py                          # Main background polling service & CLI
-│   ├── simagic_client.py                  # High-level SimPro v3 REST API client
-│   ├── vehicle_mapping.py                 # LMU vehicle resolver & preset UUID matrix
-│   └── lmu_reader.py                      # LMU REST API & Shared Memory telemetry reader
-│
-├── tools/                                 # Standalone CLI diagnostic utilities
-│   ├── test_simagic_connection.py         # Hardware & SimPro REST API diagnostic
-│   └── test_lmu_connection.py             # LMU connection & vehicle resolver tester
-│
-├── .gitignore
-├── LICENSE                                # MIT License
-├── pyproject.toml                         # Packaging metadata & entrypoint definitions
-└── README.md
-```
+For the complete file index, module responsibilities, and architecture flows, see **[`CODE_MAP.md`](CODE_MAP.md)**.
+In-depth technical research, telemetry analyses, and protocol references are located in **[`docs/`](docs/)**.
 
 ---
 
@@ -115,12 +91,25 @@ Run the daemon as a native Windows tray app that lives quietly in the taskbar no
   *(Or `simagic-tray` when installed via pip)*
 * **Launch with Console**: Double-click **`SimagicWheelDaemon.bat`**
 
-#### System Tray Controls:
-* **Hover / Status**: View current car loaded and active profile (e.g. `Simagic Daemon: [GT3 296] Ferrari 296 GT3`).
-* **🔔 Windows Toast Notifications**: Native banner notifications automatically pop up with sound whenever a car is loaded and the profile switches over CAN-FD.
-* **🚀 Launch SimPro Manager**: Quickly starts `simpro3.exe` if not running.
-* **⚙️ Revert Profile on Exit**: Toggle automatic fallback to the default profile when closing LMU.
-* **❌ Exit Daemon**: Right-click and choose **"Exit Daemon"** to cleanly shut down the service anytime.
+#### System Tray Controls (Right-Click Menu):
+* **Live Status Display**:
+  * 🎮 **Game**: Real-time Le Mans Ultimate process status (*Running / Not Running*).
+  * 🏎️ **Car**: Currently detected car model in session.
+  * ⚙️ **Profile**: Currently active GT NEO profile.
+  * 🔌 **SimPro**: Real-time SimPro Manager v3 connection health.
+* **Interactive Actions**:
+  * 🔔 **Test Notification**: Verifies native Windows Toast notifications.
+  * 🚀 **Launch SimPro Manager**: Launches `simpro3.exe` if not running.
+  * ⚙️ **Revert Profile on Exit**: Toggle automatic fallback to default profile when exiting LMU.
+  * 🛑 **Stop Daemon**: 1-click clean shutdown of the daemon service.
+
+#### Desktop & Start Menu Shortcuts:
+Generate convenient Windows shortcuts with the authentic GT NEO icon:
+```bash
+python tools/create_windows_shortcuts.py
+```
+*(Optionally pass `--startup` to automatically start with Windows).*
+
 
 ---
 
@@ -180,33 +169,27 @@ Verifies connectivity to LMU's embedded REST server (`http://localhost:6397`) an
 python tools/test_lmu_connection.py
 ```
 
+### 4. Create Desktop & Start Menu Shortcuts
+Creates customized `.lnk` Windows shortcuts configured with the GT NEO icon:
+
+```bash
+# Standard Desktop and Start Menu shortcuts
+python tools/create_windows_shortcuts.py
+
+# Add to Windows Startup folder as well
+python tools/create_windows_shortcuts.py --startup
+```
+
+### 5. Generate Application Icons
+Processes source steering wheel photos into centered 512x512 PNG and multi-resolution Windows ICO (`16x16` through `256x256`):
+
+```bash
+python tools/update_icon.py
+```
+
 
 ---
 
-## 🚘 Supported Vehicle Profiles
-
-The daemon maps LMU car models to your custom SimPro GT NEO profiles:
-
-| LMU Vehicle Class / Model | GT NEO Profile | SimPro Preset UUID |
-| :--- | :--- | :--- |
-| **Ferrari 296 GT3** | `GT3 296` | `<WHEEL_PRESET_UUID_296>` |
-| **McLaren 720S GT3 Evo** | `GT3 720S` | `<WHEEL_PRESET_UUID_720S>` |
-| **Porsche 911 GT3 R** | `GT3 911` | `<WHEEL_PRESET_UUID_911>` |
-| **BMW M4 GT3** | `GT3 M4` | `<WHEEL_PRESET_UUID_M4>` |
-| **Ford Mustang GT3** | `GT3 Mustang` | `<WHEEL_PRESET_UUID_MUSTANG>` |
-| **Lexus RC F GT3** | `GT3 RCF` | `<WHEEL_PRESET_UUID_RCF>` |
-| **Corvette Z06 GT3.R** | `GT3 Vette` | `<WHEEL_PRESET_UUID_VETTE>` |
-| **Aston Martin Vantage GTE** | `GTE AMR` | `<WHEEL_PRESET_UUID_AMR>` |
-| **Cadillac V-Series.R** | `HYP Cadillac` | `<WHEEL_PRESET_UUID_CADILLAC>` |
-| **Peugeot 9X8** | `HYP Peugeot` | `<WHEEL_PRESET_UUID_PEUGEOT>` |
-| **Aston Martin Valkyrie LMH** | `HYP Valkyrie` | `<WHEEL_PRESET_UUID_VALKYRIE>` |
-| **Oreca 07 LMP2** | `LM P2` | `<WHEEL_PRESET_UUID_LMP2>` |
-| **Ginetta G61-LT-P325 LMP3** | `LMP3 Ginetta` | `<WHEEL_PRESET_UUID_GINETTA>` |
-| **Fallback / Other** | `My GT Neo Default` | `<WHEEL_PRESET_UUID_DEFAULT>` |
-
-*Wheelbase profile automatically targets **`My LeMans Ultimate`** (`<BASE_PRESET_UUID>`).*
-
----
 
 ## 📄 License
 
