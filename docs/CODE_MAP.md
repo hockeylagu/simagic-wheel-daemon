@@ -79,8 +79,21 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 | File | Command | Purpose |
 | :--- | :--- | :--- |
 | **[`view_logs.py`](file:///c:/Documents/WheelDeamon/tools/view_logs.py)** | `python tools/view_logs.py` | Inspects recent debug logs, tails live log stream (`--follow`), or opens in Notepad (`--open`). |
+| **[`create_windows_shortcuts.py`](file:///c:/Documents/WheelDeamon/tools/create_windows_shortcuts.py)** | `python tools/create_windows_shortcuts.py` | Generates Desktop, Start Menu, and Startup `.lnk` shortcuts configured with the GT Neo icon. |
+| **[`update_icon.py`](file:///c:/Documents/WheelDeamon/tools/update_icon.py)** | `python tools/update_icon.py` | Converts source wheel images into centered 512x512 PNG and multi-resolution Windows ICO. |
 | **[`test_simagic_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_simagic_connection.py)** | `python tools/test_simagic_connection.py` | Standalone CLI diagnostic. Verifies SimPro REST API status (port 4010), catalogs all connected devices (Base, Wheel, Pedals) with firmware versions, and reads active presets. |
 | **[`test_lmu_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_lmu_connection.py)** | `python tools/test_lmu_connection.py` | Standalone CLI diagnostic. Verifies LMU REST API and shared memory connectivity, testing vehicle resolution against a simulated grid. |
+
+---
+
+### 🛡️ Local Workspace & Assets
+
+| Path | Tracking Status | Responsibility |
+| :--- | :--- | :--- |
+| **[`local/`](file:///c:/Documents/WheelDeamon/local/)** | **Strictly Gitignored** | Personal user scratchpad, private notes, optimal shift points (`local_notes.txt`), and telemetry experiments. Never tracked or committed. |
+| **[`logs/`](file:///c:/Documents/WheelDeamon/logs/)** | **Strictly Gitignored** | Daemon runtime rotating log files (`daemon.log`). |
+| **[`assets/`](file:///c:/Documents/WheelDeamon/assets/)** | Tracked in Git | Application icons (`icon.png`, `icon.ico`) featuring the authentic GT Neo butterfly wheel. |
+
 
 ---
 

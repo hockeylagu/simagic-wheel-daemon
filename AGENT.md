@@ -42,6 +42,14 @@ When writing code, refactoring, or modifying configurations, agents must adhere 
 ### 📜 E. REST API Type Strictness
 * SimPro's C++ JSON parser strictly enforces that `product_uuid`, `device_uuid`, and `preset_uuid` must be **strings**, not numbers. Passing numeric integers triggers `type_error.302`. Always pass them as `str(uuid)`.
 
+### 🛡️ F. Strict Local Workspace Isolation (`local/` Directory)
+* The `local/` directory is strictly reserved for the user's personal scratchpad, personal notes, raw telemetry dumps, and experimental research (e.g., `local_notes.txt`, `local_profiles.json`, etc.).
+* **The `local/` folder MUST ALWAYS remain `.gitignored`** (`local/`, `/local/`, `local/**`).
+* **NEVER stage, add, or commit files from `local/` to Git.**
+* `git add -f local/` is strictly prohibited.
+* Agents may read files in `local/` for domain context when relevant, but must never track, expose, or commit them into the repository.
+
+
 ---
 
 ## 3. Hardware Identifiers & Environment Topology
@@ -86,11 +94,16 @@ WheelDeamon/
 ├── tools/                                 # Standalone CLI diagnostic utilities
 │   ├── test_simagic_connection.py         # Hardware discovery & SimPro REST API tester
 │   ├── test_lmu_connection.py             # LMU telemetry & vehicle resolver tester
-│   └── create_windows_shortcuts.py        # Desktop / Start Menu shortcut generator
+│   ├── view_logs.py                       # Inspect & follow daemon debug logs
+│   ├── create_windows_shortcuts.py        # Desktop / Start Menu shortcut generator
+│   └── update_icon.py                     # Generates app icons from authentic wheel image
 │
 ├── assets/                                # Application icons
-│   ├── icon.ico                           # Multi-resolution Windows icon
-│   └── icon.png                           # 256x256 RGBA application icon
+│   ├── icon.ico                           # Multi-resolution Windows icon (16px to 256px)
+│   └── icon.png                           # 512x512 RGBA application icon
+│
+├── local/                                 # [GITIGNORED] Personal scratchpad, notes & user telemetry dumps
+├── logs/                                  # [GITIGNORED] Rotating log outputs (daemon.log)
 │
 ├── SimagicWheelDaemon.bat                 # Windows batch launcher (Console mode)
 ├── SimagicWheelDaemon.vbs                 # Windows silent VBS launcher (System Tray mode)
@@ -118,6 +131,8 @@ WheelDeamon/
 ### C. Git Execution & Authentication
 * **Never run blocking interactive `git push` commands** in background subshells. Windows Git Credential Manager requires an interactive user terminal to render browser OAuth dialogs.
 * Stage (`git add .`) and commit (`git commit -m "..."`) locally, then instruct the user to run `git push -u origin main` in their interactive terminal.
+* **Keep `local/` strictly untracked**: Ensure `local/` is always ignored in `.gitignore`. Never run `git add -f local/` or commit any file residing in `local/`.
+
 
 ### D. Testing & Verification
 * Whenever modifying SimPro client logic, run:
