@@ -1,14 +1,25 @@
+# Python artifacts
 __pycache__/
 *.py[cod]
 *$py.class
-*.log
+*.egg-info/
+dist/
+build/
+
+# Environments & IDEs
 .env
 .venv
 env/
 venv/
 .idea/
 .vscode/
-*.egg-info/
-dist/
-build/
+
+# Logs
+*.log
+logs/
+
+# Local personal files and user scratchpad (never commit)
 local/
+/local/
+local/**
+
