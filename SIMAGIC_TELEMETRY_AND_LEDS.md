@@ -183,46 +183,70 @@ Because ABS and TC alerts target the rotary dial halos and button backlights, th
 
 ---
 
-## 6. How Your Presets Store Lighting Data (Protobuf Inspection)
+## 6. How LED Patterns Are Structured & Saved
 
-In `%LOCALAPPDATA%\Simagic\Simpro3\storage\user.db`, the `preset` table stores the binary Google Protobuf blob (`presetData`).
+LED patterns are stored in **`user.db`** (`%LOCALAPPDATA%\Simagic\Simpro3\storage\user.db`) as a Google Protocol Buffers binary blob inside the **`presetData`** column of the `preset` table. 
 
-Inside your active GT NEO preset (`GT3 296`, UUID `<WHEEL_PRESET_UUID_296>`), we extracted the exact telemetry keys and configured RGB hexadecimal color values:
+When queried via the local REST API (`POST /simpro/api/v3/preset_get_dev_config`), SimPro deserializes this Protobuf blob into two primary lighting trees:
 
-```protobuf
-// Extracted Submessages from 'GT3 296'
-LightGroupEffect {
-  key: "STATIC_EFFECT"      // Default idle backlighting
-  colors: ["#6000ff", "#00ff84", "#eeeeee"]
-}
+### 6.1 The RPM Rev Light Strip Schema (`rpm_lights`)
+Located under key `"rpm_lights"` &rarr; `"1"`:
+* **`brightness`**: Master brightness percentage (e.g., `100`).
+* **`mode`**: Fill direction/pattern:
+  * `"X"` or `"left_to_right"`: Progressive fill.
+  * `"split"`: Center-outward symmetric fill.
+* **`max_rpm`**: RPM ceiling used for threshold calculation (e.g. `20000`).
+* **`color`**: A 15-element array containing the exact hexadecimal RGB color for each physical LED on the GT NEO strip. For example, in your **`GT3 296`** preset:
+  ```json
+  [
+    "#000000", "#000000", "#000000", "#000000",
+    "#00ff84", "#00ff84",
+    "#fffd51", "#fffd51",
+    "#ff0054", "#ff0054",
+    "#000000", "#000000", "#000000", "#000000", "#000000"
+  ]
+  ```
+* **`redline`**: Shift flash definition:
+  * `enabled`: `true`
+  * `key`: `"RPM_REDLINE"`
+  * `active_effect`: `"breath"`, `"flash"`, or `"mono"`
+  * `foregroud_color`: 15-element array defining the strobe color (e.g. `#49AA19`).
 
-LightGroupEffect {
-  key: "RPM_REDLINE"        // Flash when reaching shift limiter
-  color: "#0006ff"          // Deep Blue Flash
-  flash_hz: 10
-}
+---
 
-LightGroupEffect {
-  key: "FLAG_YELLOW"        // Yellow flag alert
-  color: "#fffd51"          // Vivid Yellow
-  mode: "FLASH"
-}
+### 6.2 The Button & Rotary Dial Multi-Layer Stack (`led_buttons`)
+The GT NEO has 10 RGB back-illuminated buttons and rotary dial halos. Each physical control contains a **layered effect stack**:
 
-LightGroupEffect {
-  key: "ABS_ACTIVE"         // ABS pulsation alert
-  color: "#00fffc"          // Cyan Blue Halo Pulse
-}
-
-LightGroupEffect {
-  key: "TC_ACTIVE"          // Traction Control cut alert
-  color: "#ff6c00"          // Vivid Amber/Orange Halo Pulse
-}
-
-LightGroupEffect {
-  key: "PIT_LIMITER"        // Pit lane limiter alert
-  color: "#ff0054"          // Neon Pink/Red Alternating Strobe
+```json
+"led_buttons": {
+  "8": {
+    "button": { "code": 8, "label": "" },
+    "led": {
+      "color": "#000000",
+      "items": [
+        { "key": "STATIC_EFFECT", "enabled": false, "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } },
+        { "key": "ABS_ACTIVE",    "enabled": false, "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } },
+        { "key": "TC_ACTIVE",     "enabled": false, "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } },
+        { "key": "PIT_LIMITER",   "enabled": true,  "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } },
+        { "key": "DRS_ON",        "enabled": false, "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } },
+        { "key": "FLAG",          "enabled": false, "light": { "configs": { "mono": { "foregroud_color": ["#00fffc"] } } } }
+      ]
+    }
+  }
 }
 ```
+
+#### How the Multi-Layer Evaluation Works:
+For every button, all 6 effect layers are always present in the preset:
+1. **`STATIC_EFFECT`**: Idle ambient lighting color.
+2. **`ABS_ACTIVE`**: Pulsates when ABS triggers.
+3. **`TC_ACTIVE`**: Pulsates when Traction Control triggers.
+4. **`PIT_LIMITER`**: Overrides color when Pit Limiter is engaged (e.g., Button #8 in your GT3 296 profile is set to `#00fffc` Cyan).
+5. **`DRS_ON`**: Illuminates when DRS flap is open.
+6. **`FLAG`**: Alerts for sector hazard flags.
+
+When a telemetry event fires, SimPro iterates through the layer stack; if `enabled: true`, the active telemetry effect overrides the `STATIC_EFFECT` color for that specific button.
+
 
 ---
 
