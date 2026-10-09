@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Samuel" }
+    { name = "hockeylagu" }
 ]
 keywords = [
     "simagic",
@@ -39,3 +39,8 @@ Homepage = "https://github.com/hockeylagu/simagic-wheel-daemon"
 Repository = "https://github.com/hockeylagu/simagic-wheel-daemon"
 Issues = "https://github.com/hockeylagu/simagic-wheel-daemon/issues"
 
+[project.scripts]
+simagic-daemon = "simagic_daemon.daemon:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
