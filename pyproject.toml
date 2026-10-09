@@ -35,5 +35,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Samuel/simagic-wheel-daemon"
-Repository = "https://github.com/Samuel/simagic-wheel-daemon"
+Homepage = "https://github.com/hockeylagu/simagic-wheel-daemon"
+Repository = "https://github.com/hockeylagu/simagic-wheel-daemon"
+Issues = "https://github.com/hockeylagu/simagic-wheel-daemon/issues"
+
