@@ -1,7 +1,11 @@
 """
 Windows System Tray Application for Simagic Wheel Daemon
 Runs the automation daemon in the Windows taskbar notification area (tray).
-Provides real-time profile indicators, hardware status, and quick actions.
+Key Features:
+- Custom high-tech GT racing steering wheel icon with glowing rev lights.
+- Right-click directly stops and exits the daemon cleanly.
+- Left-click displays a native Windows status notification.
+- Tooltip dynamically shows the active vehicle and SimPro preset.
 """
 
 import os
@@ -12,9 +16,15 @@ import subprocess
 import logging
 from typing import Optional
 
-from PIL import Image, ImageDraw
+from PIL import Image
 import pystray
 from pystray import MenuItem as item, Menu
+
+# Import win32 backend from pystray for precise click interception on Windows
+try:
+    from pystray import _win32
+except ImportError:
+    _win32 = None
 
 from .daemon import SimagicWheelDaemon
 from .notifications import send_windows_notification
@@ -23,22 +33,22 @@ from .process_utils import launch_simpro, is_simpro_running
 logger = logging.getLogger("simagic_daemon.tray")
 
 
-def get_icon_image(status: str = "connected") -> Image.Image:
-    """Loads the icon from assets or creates an in-memory steering wheel icon."""
+def get_icon_image() -> Image.Image:
+    """Loads the high-resolution generated icon from assets or falls back gracefully."""
     assets_icon = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icon.png")
     if os.path.exists(assets_icon):
         try:
             return Image.open(assets_icon)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed loading icon.png: {e}")
 
-    # Fallback procedural steering wheel icon
+    # Fallback to generated icon in memory
+    from PIL import ImageDraw
     size = 64
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    rim_color = (220, 38, 38) if status == "connected" else (156, 163, 175)
     draw.ellipse((4, 4, 60, 60), outline=(24, 24, 27), width=8)
-    draw.ellipse((6, 6, 58, 58), outline=rim_color, width=4)
+    draw.ellipse((6, 6, 58, 58), outline=(220, 38, 38), width=4)
     draw.ellipse((22, 22, 42, 42), fill=(24, 24, 27), outline=(245, 158, 11), width=2)
     draw.line((10, 32, 22, 32), fill=(212, 212, 216), width=3)
     draw.line((42, 32, 54, 32), fill=(212, 212, 216), width=3)
@@ -59,95 +69,90 @@ class SimagicTrayApp:
         self.icon: Optional[pystray.Icon] = None
         self._is_stopping = False
 
+    def show_status_toast(self):
+        """Displays current live status on left click."""
+        status = self.daemon.get_status()
+        car = status.get("vehicle", "None (Idle)")
+        preset = status.get("preset_name", "Default")
+        simpro = "Connected" if status.get("simpro_online") else "Offline"
+        
+        msg = f"Car: {car}\nProfile: [{preset}] | SimPro: {simpro}\n(Right-click icon to stop)"
+        send_windows_notification("🏎️ Simagic Wheel Daemon Status", msg, force=True)
+
+    def stop(self):
+        """Cleanly stops the background daemon and exits the tray icon."""
+        if self._is_stopping:
+            return
+        self._is_stopping = True
+        logger.info("Stopping Simagic Wheel Daemon via right-click...")
+
+        # Alert user of clean shutdown
+        send_windows_notification(
+            "Simagic Wheel Daemon",
+            "Daemon stopped cleanly via right-click.",
+            force=True
+        )
+
+        self.daemon.stop()
+        if self.icon:
+            self.icon.stop()
+
     def start(self):
         """Starts the background daemon thread and enters the system tray event loop."""
-        # Start daemon in background thread
+        # 1. Start daemon in background worker thread
         self.daemon_thread = threading.Thread(target=self.daemon.start, daemon=True)
         self.daemon_thread.start()
 
-        # Build system tray icon and menu
-        icon_img = get_icon_image("connected")
+        # 2. Build system tray icon
+        icon_img = get_icon_image()
         self.icon = pystray.Icon(
             name="simagic_wheel_daemon",
             icon=icon_img,
-            title="Simagic Wheel Daemon (Monitoring LMU)",
-            menu=self._create_menu()
+            title="Simagic Wheel Daemon (Right-click to stop)",
+            menu=Menu(
+                item("Stop Daemon (Right-Click)", lambda icon, item: self.stop(), default=True)
+            )
         )
 
-        # Start periodic status updater thread
+        # 3. Intercept Windows mouse events: Right-click immediately stops the daemon!
+        self._setup_click_handlers()
+
+        # 4. Start periodic tooltip updater
         updater_thread = threading.Thread(target=self._update_tray_tooltip_loop, daemon=True)
         updater_thread.start()
 
-        logger.info("System Tray Application running.")
+        # Welcome notification
+        send_windows_notification(
+            "Simagic Wheel Daemon Active",
+            "Monitoring LMU sessions over CAN-FD.\nRight-click tray icon anytime to stop.",
+            force=True
+        )
+
+        logger.info("System Tray Application started. Right-click icon to stop.")
         self.icon.run()
 
-    def _create_menu(self) -> Menu:
-        """Constructs the right-click context menu."""
-        def get_status_text(item_instance):
-            status = self.daemon.get_status()
-            if status["lmu_online"] and status["vehicle"] != "None (Idle)":
-                return f"🚘 Car: {status['vehicle']}"
-            elif status["lmu_online"]:
-                return "🎮 LMU: In Main Menu"
-            else:
-                return "💤 LMU: Idle (Waiting for game)"
+    def _setup_click_handlers(self):
+        """Hooks Windows tray notification messages so right-click stops the app."""
+        if not _win32 or not isinstance(self.icon, _win32.Icon):
+            return
 
-        def get_profile_text(item_instance):
-            status = self.daemon.get_status()
-            if status["preset_name"] and status["preset_name"] != "Default":
-                return f"⚡ Wheel Profile: [{status['preset_name']}]"
-            return "⚡ Wheel Profile: Default"
+        original_notify = self.icon._on_notify
 
-        def get_simpro_text(item_instance):
-            status = self.daemon.get_status()
-            if status["simpro_online"]:
-                return "🟢 SimPro REST API: Online (Port 4010)"
-            return "🔴 SimPro REST API: Offline"
+        def custom_on_notify(wparam, lparam):
+            # WM_RBUTTONUP = 0x0205 (Right mouse button released)
+            if lparam == _win32.win32.WM_RBUTTONUP:
+                logger.info("Right-click received on tray icon. Stopping daemon...")
+                self.stop()
+                return
 
-        def toggle_revert_on_exit(icon, item_instance):
-            self.daemon.revert_on_exit = not self.daemon.revert_on_exit
-            send_windows_notification(
-                "Simagic Wheel Daemon",
-                f"Revert profile on exit: {'Enabled' if self.daemon.revert_on_exit else 'Disabled'}"
-            )
+            # WM_LBUTTONUP = 0x0202 (Left mouse button released)
+            elif lparam == _win32.win32.WM_LBUTTONUP:
+                self.show_status_toast()
+                return
 
-        def is_revert_checked(item_instance):
-            return self.daemon.revert_on_exit
+            original_notify(wparam, lparam)
 
-        def action_test_notification(icon, item_instance):
-            send_windows_notification(
-                "Simagic Wheel Daemon",
-                "Notifications active! CAN-FD profiles will alert on car load.",
-                force=True
-            )
-
-        def action_launch_simpro(icon, item_instance):
-            launch_simpro()
-
-        def action_open_folder(icon, item_instance):
-            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            if sys.platform == "win32":
-                os.startfile(root_dir)
-
-        def action_exit(icon, item_instance):
-            self._is_stopping = True
-            logger.info("Exiting tray application...")
-            self.daemon.stop()
-            icon.stop()
-
-        return Menu(
-            item("🏎️ Simagic Wheel Daemon v0.1.0", None, enabled=False),
-            item(get_status_text, None, enabled=False),
-            item(get_profile_text, None, enabled=False),
-            item(get_simpro_text, None, enabled=False),
-            Menu.SEPARATOR,
-            item("🔔 Test Windows Notification", action_test_notification),
-            item("🚀 Launch SimPro Manager", action_launch_simpro),
-            item("⚙️ Revert Profile on Game Exit", toggle_revert_on_exit, checked=is_revert_checked),
-            item("📂 Open Project Folder", action_open_folder),
-            Menu.SEPARATOR,
-            item("❌ Exit Daemon", action_exit),
-        )
+        self.icon._on_notify = custom_on_notify
 
     def _update_tray_tooltip_loop(self):
         """Periodically refreshes the tray tooltip based on daemon status."""
@@ -156,22 +161,26 @@ class SimagicTrayApp:
                 if self.icon:
                     status = self.daemon.get_status()
                     if status["lmu_online"] and status["vehicle"] != "None (Idle)":
-                        title = f"Simagic Daemon: [{status['preset_name']}] {status['vehicle']}"
+                        title = f"Simagic: [{status['preset_name']}] {status['vehicle']} (Right-click to stop)"
                     elif status["lmu_online"]:
-                        title = "Simagic Daemon: LMU Menu"
+                        title = "Simagic: LMU Menu (Right-click to stop)"
                     elif not status["simpro_online"]:
-                        title = "Simagic Daemon: SimPro Offline"
+                        title = "Simagic: SimPro Offline (Right-click to stop)"
                     else:
-                        title = "Simagic Daemon: Monitoring LMU"
+                        title = "Simagic: Monitoring LMU (Right-click to stop)"
 
-                    self.icon.title = title
+                    # Windows notification area tooltip limit is 128 chars
+                    self.icon.title = title[:127]
             except Exception:
                 pass
             time.sleep(2.0)
 
 
 def main():
-    # Setup logging
+    # Safe UTF-8 encoding
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] [%(levelname)s] %(message)s",
