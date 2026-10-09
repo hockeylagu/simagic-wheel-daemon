@@ -129,9 +129,9 @@ WheelDeamon/
 * Always include `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8", errors="replace")` in entrypoints and tools to prevent `UnicodeEncodeError`.
 
 ### C. Git Execution & Authentication
-* **Never run blocking interactive `git push` commands** in background subshells. Windows Git Credential Manager requires an interactive user terminal to render browser OAuth dialogs.
-* Stage (`git add .`) and commit (`git commit -m "..."`) locally, then instruct the user to run `git push -u origin main` in their interactive terminal.
+* **Configured GitHub Account**: This repository is explicitly bound to the `hockeylagu` GitHub account (`https://hockeylagu@github.com/hockeylagu/simagic-wheel-daemon.git` with `credential.https://github.com.username hockeylagu`).
 * **Keep `local/` strictly untracked**: Ensure `local/` is always ignored in `.gitignore`. Never run `git add -f local/` or commit any file residing in `local/`.
+
 
 
 ### D. Testing & Verification
