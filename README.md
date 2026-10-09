@@ -144,26 +144,42 @@ simagic-daemon
 | `--revert-on-exit` | Revert GT NEO to default preset when LMU exits | `False` |
 | `--no-notify` | Disable Windows desktop toast notifications | `False` |
 | `--auto-launch-simpro` | Automatically start SimPro if not running | `False` |
-| `--once` | Run a single poll cycle and exit | `False` |
-| `--verbose`, `-v` | Enable verbose / debug logging | `False` |
+| `--debug`, `-d` | Enable verbose debug logging to console and rotating file | `False` |
+| `--verbose`, `-v` | Enable verbose logging | `False` |
+| `--log-file` | Custom path for the rotating log file | `logs/daemon.log` |
 
 ---
 
-## 🔧 Diagnostic Tools
+## 🔧 Diagnostic & Inspection Tools
 
-### Test Simagic Hardware & SimPro REST API
+### 1. View & Follow Debug Logs
+Inspect real-time daemon logs or open them in Notepad:
+
+```bash
+# View recent 35 log lines
+python tools/view_logs.py
+
+# Live follow/tail logs in console
+python tools/view_logs.py --follow
+
+# Open log file directly in Windows Notepad
+python tools/view_logs.py --open
+```
+
+### 2. Test Simagic Hardware & SimPro REST API
 Verifies connectivity to SimPro Manager (`127.0.0.1:4010`), lists connected hardware (Base, Wheel, Pedals) and their firmware versions, and catalogs all saved presets:
 
 ```bash
 python tools/test_simagic_connection.py
 ```
 
-### Test Le Mans Ultimate Telemetry & Vehicle Mapping
+### 3. Test Le Mans Ultimate Telemetry & Vehicle Mapping
 Verifies connectivity to LMU's embedded REST server (`http://localhost:6397`) and Shared Memory, testing vehicle resolution against the simulated grid:
 
 ```bash
 python tools/test_lmu_connection.py
 ```
+
 
 ---
 

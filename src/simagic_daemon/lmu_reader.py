@@ -13,7 +13,10 @@ import urllib.error
 import json
 import struct
 import os
+import logging
 from typing import Optional, Dict, Any
+
+logger = logging.getLogger("simagic_daemon.lmu_reader")
 
 
 LMU_REST_NAV_URL = "http://localhost:6397/navigation/state"
@@ -32,8 +35,11 @@ class LMUReader:
         try:
             req = urllib.request.Request(LMU_REST_NAV_URL, headers={"Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=0.8) as resp:
-                return resp.status == 200
-        except Exception:
+                ok = resp.status == 200
+                logger.debug(f"[LMU REST] Checked /navigation/state -> HTTP {resp.status}")
+                return ok
+        except Exception as e:
+            logger.debug(f"[LMU REST] /navigation/state offline ({e})")
             return False
 
     def get_rest_vehicle(self) -> Optional[Dict[str, Any]]:

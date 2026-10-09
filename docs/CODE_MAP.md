@@ -67,16 +67,18 @@ The daemon operates as a non-intrusive bridge between **Le Mans Ultimate (LMU)**
 | **[`lmu_reader.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/lmu_reader.py)** | `LMUReader` | Telemetry & session reader. Probes LMU's embedded REST server (`localhost:6397`) and rFactor 2 shared memory (`$rFactor2SMMP_Scoring$`). |
 | **[`tray.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/tray.py)** | `SimagicTrayApp`, `main()` | Windows System Tray application. Hosts the daemon in a background thread, shows real-time vehicle/profile indicators in the taskbar, and provides a context menu with actions (test notifications, launch SimPro, exit). |
 | **[`notifications.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/notifications.py)** | `send_windows_notification()` | Native Windows Toast notifications. Dispatches non-blocking WinRT toasts via PowerShell with debouncing to prevent spam. |
+| **[`logger.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/logger.py)** | `setup_logging()`, `open_log_file()` | Centralized rotating file logger (5 MB with 3 backups) and console stream handler. |
 | **[`process_utils.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/process_utils.py)** | `is_simpro_running()`, `is_lmu_running()`, `launch_simpro()` | Windows process watchdog for `simpro3.exe` and `lemansultimate.exe`. Auto-launches SimPro when requested. |
 | **[`__main__.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/__main__.py)** | - | Package executable wrapper enabling `python -m simagic_daemon`. |
 | **[`__init__.py`](file:///c:/Documents/WheelDeamon/src/simagic_daemon/__init__.py)** | `__version__`, exports | Public module export boundary and package metadata. |
 
 ---
 
-### 🔧 Diagnostic Tools (`tools/`)
+### 🔧 Diagnostic & Logging Tools (`tools/`)
 
 | File | Command | Purpose |
 | :--- | :--- | :--- |
+| **[`view_logs.py`](file:///c:/Documents/WheelDeamon/tools/view_logs.py)** | `python tools/view_logs.py` | Inspects recent debug logs, tails live log stream (`--follow`), or opens in Notepad (`--open`). |
 | **[`test_simagic_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_simagic_connection.py)** | `python tools/test_simagic_connection.py` | Standalone CLI diagnostic. Verifies SimPro REST API status (port 4010), catalogs all connected devices (Base, Wheel, Pedals) with firmware versions, and reads active presets. |
 | **[`test_lmu_connection.py`](file:///c:/Documents/WheelDeamon/tools/test_lmu_connection.py)** | `python tools/test_lmu_connection.py` | Standalone CLI diagnostic. Verifies LMU REST API and shared memory connectivity, testing vehicle resolution against a simulated grid. |
 

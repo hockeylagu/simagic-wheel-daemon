@@ -42,6 +42,11 @@ PRESET_MAP_GT_NEO = {
 }
 
 
+import logging
+
+logger = logging.getLogger("simagic_daemon.mapping")
+
+
 def resolve_vehicle_to_preset(vehicle_identifier: str) -> Tuple[str, str, str]:
     """
     Takes any raw vehicle string (vehFile, carType, model name, or manufacturer)
@@ -49,9 +54,11 @@ def resolve_vehicle_to_preset(vehicle_identifier: str) -> Tuple[str, str, str]:
     (Friendly Model Name, Target GT NEO Preset UUID, Preset Name)
     """
     if not vehicle_identifier or not vehicle_identifier.strip():
+        logger.debug("[Mapping] Empty vehicle identifier, returning Default Setup.")
         return ("Default Setup", PRESET_MAP_GT_NEO["DEFAULT"], "My GT Neo Default")
 
     v = vehicle_identifier.upper()
+    logger.debug(f"[Mapping] Resolving vehicle token: '{vehicle_identifier}' (normalized: '{v}')")
 
     # --- GTE (Check first to avoid generic GT3 collisions on 911/488) ---
     if "DSTATI" in v or ("AMR" in v and "GTE" in v):

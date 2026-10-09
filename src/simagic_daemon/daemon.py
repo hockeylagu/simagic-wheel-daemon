@@ -316,20 +316,28 @@ def main():
         help="Perform a single poll cycle and exit"
     )
     parser.add_argument(
+        "--debug", "-d",
+        action="store_true",
+        help="Enable full debug logging to console and rotating file"
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
-        help="Enable verbose / debug logging"
+        help="Enable verbose logging"
+    )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        default=None,
+        help="Custom path for the rotating log file (default: logs/daemon.log)"
     )
 
     args = parser.parse_args()
 
-    # Setup logging format
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="[%(asctime)s] [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    # Configure rotating file + console logging
+    from .logger import setup_logging
+    log_level = logging.DEBUG if (args.verbose or args.debug) else logging.INFO
+    setup_logging(log_level=log_level, log_file=args.log_file)
 
     daemon = SimagicWheelDaemon(
         poll_interval=args.poll_interval,

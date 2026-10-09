@@ -181,11 +181,9 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    from .logger import setup_logging
+    # Setup rotating file debug logging (logs/daemon.log)
+    setup_logging(log_level=logging.DEBUG)
     app = SimagicTrayApp()
     app.start()
 

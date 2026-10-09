@@ -18,6 +18,11 @@ DEFAULT_BASE_PRODUCT_UUID = "17301504"            # Simagic EVO Base (Alpha)
 DEFAULT_BASE_DEVICE_UUID = "<BASE_DEVICE_UUID>"  # Persistent Wheelbase UUID
 
 
+import logging
+
+logger = logging.getLogger("simagic_daemon.client")
+
+
 def call_simpro_api(endpoint: str, payload: Optional[Dict[str, Any]] = None, timeout: float = 3.0) -> Dict[str, Any]:
     """Sends a POST request to SimPro Manager's local HTTP API."""
     url = f"{API_BASE_URL}/{endpoint}"
@@ -27,13 +32,18 @@ def call_simpro_api(endpoint: str, payload: Optional[Dict[str, Any]] = None, tim
         data=data,
         headers={"Content-Type": "application/json"}
     )
+    logger.debug(f"[SimPro API ->] POST {url} | payload: {payload}")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8")
-            return json.loads(raw) if raw else {}
+            res = json.loads(raw) if raw else {}
+            logger.debug(f"[SimPro API <-] HTTP {resp.status} | response status: {res.get('status')}")
+            return res
     except urllib.error.URLError as e:
+        logger.debug(f"[SimPro API <-] URLError: {e}")
         return {"status": -1, "message": f"Connection error: {e}"}
     except Exception as e:
+        logger.debug(f"[SimPro API <-] Unexpected error: {e}")
         return {"status": -1, "message": f"Unexpected error: {e}"}
 
 
